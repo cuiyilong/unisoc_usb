@@ -85,11 +85,7 @@ static struct usb_configuration wcn_comp_config_driver[2] = {
 static bool cfg_idx = 1;
 
 
-const char f_inf_name[MAX_U_WCN_INTERFACES][16] = {
-"wcn_bt0",
-"wcn_bt1",
-"wcn_wifi"
-}
+
 
 static struct usb_function_instance *fi_wcn[MAX_U_WCN_INTERFACES];
 static struct usb_function *f_wcn[MAX_U_WCN_INTERFACES];

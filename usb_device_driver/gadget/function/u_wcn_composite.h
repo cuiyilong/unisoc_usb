@@ -17,6 +17,12 @@
 
 #define MAX_U_WCN_INTERFACES	3
 
+const char f_inf_name[MAX_U_WCN_INTERFACES][16] = {
+"wcn_bt0",
+"wcn_bt1",
+"wcn_wifi"
+};
+
 struct f_serial_opts {
 	struct usb_function_instance func_inst;
 	u8 port_num;

@@ -42,6 +42,38 @@ static inline struct f_gser *func_to_gser(struct usb_function *f)
 	return container_of(f, struct f_gser, port.func);
 }
 
+
+struct wcn_func_bt0{
+	struct usb_function		func;
+	struct usb_ep			*int_in;
+	struct usb_ep			*bulk_out;
+	struct usb_ep			*bulk_in;
+};
+
+struct wcn_func_bt1{
+	struct usb_function		func;
+	struct usb_ep			*isoc_out;
+	struct usb_ep			*isoc_in;
+};
+
+struct wcn_func_wifi{
+	struct usb_function		func;
+	struct usb_ep			*in;
+	struct usb_ep			*out;
+};
+
+
+struct f_wcn_dev{
+	/*inf 0*/
+	struct wcn_func_bt0 wcn_bt0;
+	/*inf 1*/
+	struct wcn_func_bt1 wcn_bt1;
+	/*inf 2*/
+	struct wcn_func_wifi wcn_wifi;
+
+};
+
+
 /*-------------------------------------------------------------------------*/
 
 /* interface descriptor: */
@@ -472,7 +504,7 @@ static int gser_setup(struct usb_function *f,
 	return value;
 }
 
-static int gser_bind(struct usb_configuration *c, struct usb_function *f)
+static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 {
 	struct usb_composite_dev *cdev = c->cdev;
 	struct f_gser		*gser = func_to_gser(f);
@@ -630,7 +662,7 @@ static struct usb_function *wcn_alloc(struct usb_function_instance *fi)
 
 	gser->port_num = opts->port_num;
 
-	gser->port.func.name = "gser";
+	f_wcn_dev->port.func.name = "gser";
 	gser->port.func.strings = gser_strings;
 	gser->port.func.bind = wcn_bind;
 	gser->port.func.unbind = wcn_unbind;
