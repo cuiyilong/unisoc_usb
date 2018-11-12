@@ -84,11 +84,18 @@ static struct usb_configuration wcn_comp_config_driver[2] = {
 
 static bool cfg_idx = 1;
 
+
+const char f_inf_name[MAX_U_WCN_INTERFACES][16] = {
+"wcn_bt0",
+"wcn_bt1",
+"wcn_wifi"
+}
+
 static struct usb_function_instance *fi_wcn[MAX_U_WCN_INTERFACES];
 static struct usb_function *f_wcn[MAX_U_WCN_INTERFACES];
 
-static int wcn_comp_register_func(struct usb_composite_dev *cdev,
-		struct usb_configuration *c, const char *f_name)
+static int wcn_composite_register_func(struct usb_composite_dev *cdev,
+		struct usb_configuration *c)
 {
 	int i;
 	int ret;
@@ -97,38 +104,37 @@ static int wcn_comp_register_func(struct usb_composite_dev *cdev,
 	if (ret)
 		goto out;
 
-	for (i = 0; i < n_ports; i++) {
+	for(i = 0;i < MAX_U_WCN_INTERFACES;i++) {
 
-		fi_wcn[i] = usb_get_function_instance(f_name);
-		if (IS_ERR(fi_serial[i])) {
-			ret = PTR_ERR(fi_serial[i]);
+		fi_wcn[i] = usb_get_function_instance(f_inf_name[i]);
+		if (IS_ERR(fi_wcn[i])) {
+			ret = PTR_ERR(fi_wcn[i]);
 			goto fail;
 		}
 
-		f_wcn[i] = usb_get_function(fi_serial[i]);
-		if (IS_ERR(f_serial[i])) {
-			ret = PTR_ERR(f_serial[i]);
+		f_wcn[i] = usb_get_function(fi_wcn[i]);
+		if (IS_ERR(f_wcn[i])) {
+			ret = PTR_ERR(f_wcn[i]);
 			goto err_get_func;
 		}
 
-		ret = usb_add_function(c, f_serial[i]);
+		ret = usb_add_function(c, f_wcn[i]);
 		if (ret)
 			goto err_add_func;
 	}
-
 	return 0;
 
 err_add_func:
-	usb_put_function(f_serial[i]);
+	usb_put_function(f_wcn[i]);
 err_get_func:
-	usb_put_function_instance(fi_serial[i]);
+	usb_put_function_instance(f_wcn[i]);
 
 fail:
 	i--;
 	while (i >= 0) {
-		usb_remove_function(c, f_serial[i]);
-		usb_put_function(f_serial[i]);
-		usb_put_function_instance(fi_serial[i]);
+		usb_remove_function(c, f_wcn[i]);
+		usb_put_function(f_wcn[i]);
+		usb_put_function_instance(fi_wcn[i]);
 		i--;
 	}
 out:
@@ -164,21 +170,16 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 			otg_desc[0] = usb_desc;
 			otg_desc[1] = NULL;
 		}
-		wcn_comp_config_driver.descriptors = otg_desc;
-		wcn_comp_config_driver.bmAttributes |= USB_CONFIG_ATT_WAKEUP;
+		wcn_comp_config_driver[cfg_idx].descriptors = otg_desc;
+		wcn_comp_config_driver[cfg_idx].bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 	}
 
 	/* register our configuration */
-	if (cfg_idx) {
-		status  = wcn_comp_register_func(cdev, &wcn_comp_config_driver[cfg_idx],
-				"default0");
-		usb_ep_autoconfig_reset(cdev->gadget);
-	} else
-		status = serial_register_ports(cdev, &wcn_comp_config_driver[cfg_idx],
-				"default1");
+	status  = wcn_composite_register_func(cdev, &wcn_comp_config_driver[cfg_idx]);
 	if (status < 0)
 		goto fail1;
-
+	//usb_ep_autoconfig_reset(cdev->gadget);
+	
 	usb_composite_overwrite_options(cdev, &coverwrite);
 	INFO(cdev, "%s\n", GS_VERSION_NAME);
 
@@ -220,8 +221,10 @@ int wcn_copmosite_init(void)
 	 * but neither of these product IDs was defined that way.
 	 */
 
+	/*get cfg_idx from efuse*/
+
 	wcn_comp_config_driver[cfg_idx].label = "Wcn Cfg";
-	wcn_comp_config_driver[cfg_idx].bConfigurationValue = 2;
+	wcn_comp_config_driver[cfg_idx].bConfigurationValue = 1;
 	device_desc.bDeviceClass = USB_CLASS_VENDOR_SPEC;
 	device_desc.idProduct =
 			cpu_to_le16(GS_CDC_PRODUCT_ID);

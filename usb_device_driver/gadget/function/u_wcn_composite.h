@@ -34,7 +34,7 @@ struct f_serial_opts {
  *
  * REVISIT someday, allow multiplexing several TTYs over these endpoints.
  */
-struct gserial {
+struct wcn_bt0 {
 	struct usb_function		func;
 
 	/* port is managed by gserial_{connect,disconnect} */

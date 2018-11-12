@@ -582,7 +582,7 @@ static void gser_free_inst(struct usb_function_instance *f)
 	kfree(opts);
 }
 
-static struct usb_function_instance *gser_alloc_inst(void)
+static struct usb_function_instance *wcn_alloc_inst(void)
 {
 	struct f_serial_opts *opts;
 	int ret;
@@ -611,12 +611,12 @@ static void gser_free(struct usb_function *f)
 	kfree(serial);
 }
 
-static void gser_unbind(struct usb_configuration *c, struct usb_function *f)
+static void wcn_unbind(struct usb_configuration *c, struct usb_function *f)
 {
 	usb_free_all_descriptors(f);
 }
 
-static struct usb_function *gser_alloc(struct usb_function_instance *fi)
+static struct usb_function *wcn_alloc(struct usb_function_instance *fi)
 {
 	struct f_gser	*gser;
 	struct f_serial_opts *opts;
@@ -632,15 +632,18 @@ static struct usb_function *gser_alloc(struct usb_function_instance *fi)
 
 	gser->port.func.name = "gser";
 	gser->port.func.strings = gser_strings;
-	gser->port.func.bind = gser_bind;
-	gser->port.func.unbind = gser_unbind;
-	gser->port.func.set_alt = gser_set_alt;
+	gser->port.func.bind = wcn_bind;
+	gser->port.func.unbind = wcn_unbind;
+	gser->port.func.set_alt = w_set_alt;
 	gser->port.func.setup = gser_setup;
 	gser->port.func.disable = gser_disable;
-	gser->port.func.free_func = gser_free;
+	gser->port.func.free_func = wcn_free;
 
 	return &gser->port.func;
 }
 
-DECLARE_USB_FUNCTION_INIT(gser, gser_alloc_inst, gser_alloc);
+DECLARE_USB_FUNCTION_INIT(wcn_bt0, wcn_bt0_alloc_inst, wcn_bt0_alloc);
 
+
+usb_dev_chninit(_name ## func_init);					\
+usb_dev_chndeinit(_name ## func_exit)

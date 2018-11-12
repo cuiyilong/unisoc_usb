@@ -204,7 +204,7 @@ struct usb_function {
 	void			(*unbind)(struct usb_configuration *,
 					struct usb_function *);
 	void			(*free_func)(struct usb_function *f);
-	struct module		*mod;
+	//struct module		*mod;
 
 	/* runtime state management */
 	int			(*set_alt)(struct usb_function *,
@@ -564,7 +564,7 @@ static inline u16 get_default_bcdDevice(void)
 
 struct usb_function_driver {
 	const char *name;
-	struct module *mod;
+	//struct module *mod;
 	struct list_head list;
 	struct usb_function_instance *(*alloc_inst)(void);
 	struct usb_function *(*alloc_func)(struct usb_function_instance *inst);
@@ -593,27 +593,25 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 		struct usb_configuration *config);
 void usb_remove_function(struct usb_configuration *c, struct usb_function *f);
 
+
 #define DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\
 	static struct usb_function_driver _name ## usb_func = {		\
-		.name = __stringify(_name),				\
-		.mod  = THIS_MODULE,					\
+		.name = __stringify(_name),				\			\
 		.alloc_inst = _inst_alloc,				\
 		.alloc_func = _func_alloc,				\
-	};								\
-	MODULE_ALIAS("usbfunc:"__stringify(_name));
+	};								
 
 #define DECLARE_USB_FUNCTION_INIT(_name, _inst_alloc, _func_alloc)	\
 	DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\
-	static int __init _name ## mod_init(void)			\
+	static int  _name ## func_init(void)			\
 	{								\
 		return usb_function_register(&_name ## usb_func);	\
 	}								\
-	static void __exit _name ## mod_exit(void)			\
+	static void  _name ## func_exit(void)			\
 	{								\
 		usb_function_unregister(&_name ## usb_func);		\
-	}								\
-	module_init(_name ## mod_init);					\
-	module_exit(_name ## mod_exit)
+	}
+
 
 /* messaging utils */
 #define DBG(d, fmt, args...) \
