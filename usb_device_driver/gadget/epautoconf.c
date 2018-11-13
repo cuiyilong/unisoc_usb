@@ -9,16 +9,6 @@
  * (at your option) any later version.
  */
 
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/types.h>
-#include <linux/device.h>
-
-#include <linux/ctype.h>
-#include <linux/string.h>
-
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
 
 /**
  * usb_ep_autoconfig_ss() - choose an endpoint matching the ep
@@ -129,7 +119,7 @@ found_ep:
 	ep->claimed = true;
 	return ep;
 }
-EXPORT_SYMBOL_GPL(usb_ep_autoconfig_ss);
+
 
 /**
  * usb_ep_autoconfig() - choose an endpoint matching the
@@ -169,7 +159,7 @@ struct usb_ep *usb_ep_autoconfig(
 {
 	return usb_ep_autoconfig_ss(gadget, desc, NULL);
 }
-EXPORT_SYMBOL_GPL(usb_ep_autoconfig);
+
 
 /**
  * usb_ep_autoconfig_release - releases endpoint and set it to initial state
@@ -186,7 +176,7 @@ void usb_ep_autoconfig_release(struct usb_ep *ep)
 	ep->claimed = false;
 	ep->driver_data = NULL;
 }
-EXPORT_SYMBOL_GPL(usb_ep_autoconfig_release);
+
 
 /**
  * usb_ep_autoconfig_reset - reset endpoint autoconfig state
@@ -208,4 +198,4 @@ void usb_ep_autoconfig_reset (struct usb_gadget *gadget)
 	gadget->in_epnum = 0;
 	gadget->out_epnum = 0;
 }
-EXPORT_SYMBOL_GPL(usb_ep_autoconfig_reset);
+

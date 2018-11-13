@@ -85,9 +85,6 @@ static struct usb_configuration wcn_comp_config_driver[2] = {
 static bool cfg_idx = 1;
 
 
-
-
-static struct usb_function_instance *fi_wcn[MAX_U_WCN_INTERFACES];
 static struct usb_function *f_wcn[MAX_U_WCN_INTERFACES];
 
 static int wcn_composite_register_func(struct usb_composite_dev *cdev,
@@ -101,17 +98,10 @@ static int wcn_composite_register_func(struct usb_composite_dev *cdev,
 		goto out;
 
 	for(i = 0;i < MAX_U_WCN_INTERFACES;i++) {
-
-		fi_wcn[i] = usb_get_function_instance(f_inf_name[i]);
-		if (IS_ERR(fi_wcn[i])) {
-			ret = PTR_ERR(fi_wcn[i]);
-			goto fail;
-		}
-
-		f_wcn[i] = usb_get_function(fi_wcn[i]);
+		f_wcn[i] = get_usb_function(f_inf_name[i]);
 		if (IS_ERR(f_wcn[i])) {
 			ret = PTR_ERR(f_wcn[i]);
-			goto err_get_func;
+			goto fail;
 		}
 
 		ret = usb_add_function(c, f_wcn[i]);
@@ -122,15 +112,12 @@ static int wcn_composite_register_func(struct usb_composite_dev *cdev,
 
 err_add_func:
 	usb_put_function(f_wcn[i]);
-err_get_func:
-	usb_put_function_instance(f_wcn[i]);
 
 fail:
 	i--;
 	while (i >= 0) {
 		usb_remove_function(c, f_wcn[i]);
 		usb_put_function(f_wcn[i]);
-		usb_put_function_instance(fi_wcn[i]);
 		i--;
 	}
 out:
@@ -181,7 +168,7 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 
 	return 0;
 fail1:
-	kfree(otg_desc[0]);
+	usb_mem_free(otg_desc[0]);
 	otg_desc[0] = NULL;
 fail:
 	return status;
@@ -191,12 +178,10 @@ static int wcn_composite_unbind(struct usb_composite_dev *cdev)
 {
 	int i;
 
-	for (i = 0; i < n_ports; i++) {
-		usb_put_function(f_serial[i]);
-		usb_put_function_instance(fi_serial[i]);
-	}
+	for (i = 0; i < MAX_U_WCN_INTERFACES; i++)
+		usb_put_function(f_wcn[i]);
 
-	kfree(otg_desc[0]);
+	usb_mem_free(otg_desc[0]);
 	otg_desc[0] = NULL;
 
 	return 0;

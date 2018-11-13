@@ -1903,6 +1903,35 @@ static int dwc3_gadget_stop(struct usb_gadget *g)
 	return 0;
 }
 
+static struct usb_ep *dwc3_gadget_match_ep(struct usb_gadget *g,
+		struct usb_endpoint_descriptor *desc,
+		struct usb_ss_ep_comp_descriptor *ep_comp)
+{
+	struct usb_ep *ep;
+
+	switch (usb_endpoint_type(desc)) {
+	case USB_ENDPOINT_XFER_INT:
+		/* single buffering is enough */
+		ep = &dev->ep[3].ep;
+		if (usb_gadget_ep_match_desc(g, ep, desc, ep_comp))
+			return ep;
+		break;
+	case USB_ENDPOINT_XFER_BULK:
+		if (usb_endpoint_dir_in(desc)) {
+			/* DMA may be available */
+			ep = &dev->ep[2].ep;
+			if (usb_gadget_ep_match_desc(g, ep, desc, ep_comp))
+				return ep;
+		}
+		break;
+	default:
+		/* nothing */ ;
+	}
+
+	return NULL;
+}
+
+
 static const struct usb_gadget_ops dwc3_gadget_ops = {
 	.get_frame		= dwc3_gadget_get_frame,
 	.wakeup			= dwc3_gadget_wakeup,
@@ -1910,6 +1939,7 @@ static const struct usb_gadget_ops dwc3_gadget_ops = {
 	.pullup			= dwc3_gadget_pullup,
 	.udc_start		= dwc3_gadget_start,
 	.udc_stop		= dwc3_gadget_stop,
+	.match_ep		= dwc3_gadget_match_ep,
 };
 
 /* -------------------------------------------------------------------------- */

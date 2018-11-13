@@ -208,7 +208,7 @@ struct usb_descriptor_header *usb_otg_descriptor_alloc(
 	else
 		length = sizeof(struct usb_otg_descriptor);
 
-	otg_desc = kzalloc(length, GFP_KERNEL);
+	otg_desc = usb_malloc(length);
 	return otg_desc;
 }
 EXPORT_SYMBOL_GPL(usb_otg_descriptor_alloc);

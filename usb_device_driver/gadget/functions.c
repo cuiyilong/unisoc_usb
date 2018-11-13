@@ -8,10 +8,33 @@
 static LIST_HEAD(func_list);
 static DEFINE_MUTEX(func_lock);
 
+static struct usb_function *get_usb_function(const char *name)
+{
+	struct usb_function_driver *fd;
+	struct usb_function *f;
+
+	f = ERR_PTR(-ENOENT);
+	//mutex_lock(&func_lock);
+	list_for_each_entry(fd, &func_list, list) {
+
+		if (strcmp(name, fd->name))
+			continue;
+
+		
+		f  = fd->alloc_func(name);
+		if (IS_ERR(f))
+			//module_put(fd->mod);
+		else
+			f->fd = fd;
+		break;
+	}
+	//mutex_unlock(&func_lock);
+	return f;
+}
+
 static struct usb_function_instance *try_get_usb_function_instance(const char *name)
 {
 	struct usb_function_driver *fd;
-	struct usb_function_instance *fi;
 
 	fi = ERR_PTR(-ENOENT);
 	//mutex_lock(&func_lock);
@@ -83,7 +106,7 @@ int usb_function_register(struct usb_function_driver *newf)
 
 	ret = -EEXIST;
 
-	mutex_lock(&func_lock);
+	//mutex_lock(&func_lock);
 	list_for_each_entry(fd, &func_list, list) {
 		if (!strcmp(fd->name, newf->name))
 			goto out;
@@ -91,7 +114,7 @@ int usb_function_register(struct usb_function_driver *newf)
 	ret = 0;
 	list_add_tail(&newf->list, &func_list);
 out:
-	mutex_unlock(&func_lock);
+	//mutex_unlock(&func_lock);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(usb_function_register);

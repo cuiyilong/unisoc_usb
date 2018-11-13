@@ -16,8 +16,8 @@
 #include <linux/usb/cdc.h>
 
 #define MAX_U_WCN_INTERFACES	3
-
-const char f_inf_name[MAX_U_WCN_INTERFACES][16] = {
+#define MAX_FUNC_NAME_LEN 16
+const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
 "wcn_bt1",
 "wcn_wifi"

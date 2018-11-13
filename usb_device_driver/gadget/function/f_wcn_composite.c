@@ -21,6 +21,8 @@
 #define NOTIFY_INTERVAL_MS		32
 #define NOTIFY_MAXPACKET		10	/* notification + 2 bytes */
 
+#define MAX_SINGLE_DIR_EPS 15;
+
 
 /*
  * This function packages a simple "generic serial" port with no real
@@ -30,18 +32,6 @@
  * CDC ACM driver.  However, for many purposes it's just as functional
  * if you can arrange appropriate host side drivers.
  */
-
-struct f_wcn_bt0 {
-	struct gserial			port;
-	u8				data_id;
-	u8				port_num;
-};
-
-static inline struct f_gser *func_to_gser(struct usb_function *f)
-{
-	return container_of(f, struct f_gser, port.func);
-}
-
 
 struct wcn_func_bt0{
 	struct usb_function		func;
@@ -65,14 +55,17 @@ struct wcn_func_wifi{
 
 struct f_wcn_dev{
 	/*inf 0*/
-	struct wcn_func_bt0 wcn_bt0;
+	struct wcn_func_bt0 *wcn_bt0;
 	/*inf 1*/
-	struct wcn_func_bt1 wcn_bt1;
+	struct wcn_func_bt1 *wcn_bt1;
 	/*inf 2*/
-	struct wcn_func_wifi wcn_wifi;
+	struct wcn_func_wifi *wcn_wifi;
+
+	struct usb_ep	 *in_ep[MAX_SINGLE_DIR_EPS];
+	struct usb_ep	 *out_ep[MAX_SINGLE_DIR_EPS];
 
 };
-
+struct f_wcn_dev wcn_usb_dev;
 
 /*-------------------------------------------------------------------------*/
 
@@ -159,12 +152,14 @@ static struct usb_endpoint_descriptor bt0_hs_int_in_desc = {
 static struct usb_endpoint_descriptor bt0_hs_bulk_out_desc = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
 	.wMaxPacketSize =	cpu_to_le16(512),
 };
 static struct usb_endpoint_descriptor bt0_hs_bulk_in_desc = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
 	.wMaxPacketSize =	cpu_to_le16(512),
 };
@@ -180,6 +175,7 @@ static struct usb_descriptor_header *bt0_hs_function[] = {
 static struct usb_endpoint_descriptor bt0_ss_int_in_desc = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_INT,
 	.wMaxPacketSize =	cpu_to_le16(1024),
 };
@@ -187,6 +183,7 @@ static struct usb_endpoint_descriptor bt0_ss_int_in_desc = {
 static struct usb_endpoint_descriptor bt0_ss_bulk_out_desc = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
 	.wMaxPacketSize =	cpu_to_le16(1024),
 };
@@ -194,6 +191,7 @@ static struct usb_endpoint_descriptor bt0_ss_bulk_out_desc = {
 static struct usb_endpoint_descriptor bt0_ss_bulk_in_desc = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
 	.wMaxPacketSize =	cpu_to_le16(1024),
 };
@@ -297,14 +295,14 @@ static struct usb_descriptor_header *bt1_ss_function[] = {
 
 /* wifi interface */
 /* full speed support: */
-static struct usb_endpoint_descriptor wifi_fs_bulk_out_desc = {
+static struct usb_endpoint_descriptor wifi_fs_bulk_out_desc[7] = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
 };
 
-static struct usb_endpoint_descriptor wifi_fs_bulk_in_desc = {
+static struct usb_endpoint_descriptor wifi_fs_bulk_in_desc[3] = {
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
@@ -313,16 +311,16 @@ static struct usb_endpoint_descriptor wifi_fs_bulk_in_desc = {
 
 static struct usb_descriptor_header *wifi_fs_function[] = {
 	(struct usb_descriptor_header *) &wifi_interface_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc,
+	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc[0],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc[1],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[0],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[1],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[2],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[3],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[4],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[5],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_in_desc[2],
+	(struct usb_descriptor_header *) &wifi_fs_bulk_out_desc[6],
 	NULL,
 };
 
@@ -344,16 +342,16 @@ static struct usb_endpoint_descriptor wifi_hs_bulk_in_desc = {
 
 static struct usb_descriptor_header *wifi_hs_function[] = {
 	(struct usb_descriptor_header *) &wifi_interface_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc,
+	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc[0],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc[1],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[0],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[1],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[2],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[3],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[4],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[5],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_in_desc[2],
+	(struct usb_descriptor_header *) &wifi_hs_bulk_out_desc[6],
 	NULL,
 };
 
@@ -380,39 +378,57 @@ static struct usb_ss_ep_comp_descriptor wifi_ss_bulk_comp_desc = {
 
 static struct usb_descriptor_header *wifi_ss_function[] = {
 	(struct usb_descriptor_header *) &wifi_interface_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc,
-	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc[0],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc[1],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[0],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[1],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[2],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[3],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[4],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[5],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_in_desc[2],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &wifi_ss_bulk_out_desc[6],
+	(struct usb_descriptor_header *) &wifi_ss_bulk_comp_desc,
 	NULL,
 };
 
 /* string descriptors: */
 
-static struct usb_string gser_string_defs[] = {
-	[0].s = "Generic Serial",
+static struct usb_string wcn_string_defs[] = {
+	[0].s = "Wcn Composite",
 	{  } /* end of list */
 };
 
-static struct usb_gadget_strings gser_string_table = {
+static struct usb_gadget_strings wcn_string_table = {
 	.language =		0x0409,	/* en-us */
-	.strings =		gser_string_defs,
+	.strings =		wcn_string_defs,
 };
 
-static struct usb_gadget_strings *gser_strings[] = {
-	&gser_string_table,
+static struct usb_gadget_strings *wcn_strings[] = {
+	&wcn_string_table,
 	NULL,
 };
 
+
+static inline struct f_gser *func_to_dev(struct usb_function *f)
+{
+	return container_of(f, struct f_gser, port.func);
+}
+
+
 /*-------------------------------------------------------------------------*/
 
-static int gser_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
+
+static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 {
 	struct f_gser		*gser = func_to_gser(f);
 	struct usb_composite_dev *cdev = f->config->cdev;
@@ -438,7 +454,7 @@ static int gser_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 	return 0;
 }
 
-static void gser_disable(struct usb_function *f)
+static void wcn_disable(struct usb_function *f)
 {
 	struct f_gser	*gser = func_to_gser(f);
 	struct usb_composite_dev *cdev = f->config->cdev;
@@ -452,7 +468,7 @@ static void gser_disable(struct usb_function *f)
 
 /* serial function driver setup/binding */
 
-static void gser_setup_complete(struct usb_ep *ep, struct usb_request *req)
+static void wcn_setup_complete(struct usb_ep *ep, struct usb_request *req)
 {
 }
 
@@ -461,7 +477,7 @@ static void gser_setup_complete(struct usb_ep *ep, struct usb_request *req)
  * request defining the bRequestType = 0x21 and bRequest = 0x22 to make the
  * usb-to-serial driver work well.
  */
-static int gser_setup(struct usb_function *f,
+static int wcn_setup(struct usb_function *f,
 		      const struct usb_ctrlrequest *ctrl)
 {
 	struct usb_composite_dev *cdev = f->config->cdev;
@@ -507,61 +523,159 @@ static int gser_setup(struct usb_function *f,
 static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 {
 	struct usb_composite_dev *cdev = c->cdev;
-	struct f_gser		*gser = func_to_gser(f);
-	int			status;
+	int			status, i;
 	struct usb_ep		*ep;
+	u8 addr;
 
 	/* REVISIT might want instance-specific strings to help
 	 * distinguish instances ...
 	 */
 
 	/* maybe allocate device-global string ID */
-	if (gser_string_defs[0].id == 0) {
+	if (wcn_string_defs[0].id == 0) {
 		status = usb_string_id(c->cdev);
 		if (status < 0)
 			return status;
-		gser_string_defs[0].id = status;
+		wcn_string_defs[0].id = status;
 	}
 
 	/* allocate instance-specific interface IDs */
 	status = usb_interface_id(c, f);
 	if (status < 0)
 		goto fail;
-	gser->data_id = status;
-	gser_interface_desc.bInterfaceNumber = status;
+
+	if(!strncmp(f->name,"wcn_bt0",strlen("wcn_bt0"))){
+		
+		bt0_interface_desc.bInterfaceNumber = status;
+		/* allocate instance-specific endpoints */
+		ep = usb_ep_autoconfig(cdev->gadget, &bt0_fs_int_in_desc);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_bt0->int_in = ep;
+		addr = ep->address & 0xf;
+		wcn_usb_dev->in_ep[addr] = ep;
+
+		ep = usb_ep_autoconfig(cdev->gadget, &bt0_fs_bulk_out_desc);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_bt0->bulk_out = ep;
+		addr = ep->address;
+		wcn_usb_dev->out_ep[addr] = ep;
+		
+		ep = usb_ep_autoconfig(cdev->gadget, &bt0_fs_bulk_in_desc);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_bt0->bulk_in = ep;
+		addr = ep->address & 0xf;
+		wcn_usb_dev->in_ep[addr] = ep;
+
+		/* support all relevant hardware speeds... we expect that when
+		 * hardware is dual speed, all bulk-capable endpoints work at
+		 * both speeds
+		 */
+		bt0_hs_int_in_desc.bEndpointAddress = bt0_fs_int_in_desc.bEndpointAddress;
+		bt0_hs_bulk_out_desc.bEndpointAddress = bt0_fs_bulk_out_desc.bEndpointAddress;
+		bt0_hs_bulk_in_desc.bEndpointAddress = bt0_fs_bulk_in_desc.bEndpointAddress;
+
+		bt0_ss_int_in_desc.bEndpointAddress = bt0_fs_int_in_desc.bEndpointAddress;
+		bt0_ss_bulk_out_desc.bEndpointAddress = bt0_fs_bulk_out_desc.bEndpointAddress;
+		bt0_ss_bulk_in_desc.bEndpointAddress = bt0_fs_bulk_in_desc.bEndpointAddress;
+
+
+		status = usb_assign_descriptors(f, bt0_fs_function, bt0_hs_function,
+				bt0_ss_function);
+		if (status)
+			goto fail;
+	}else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
+		bt1_interface_desc.bInterfaceNumber = status;
+		/* allocate instance-specific endpoints */
+		ep = usb_ep_autoconfig(cdev->gadget, &bt1_fs_isoc_out_desc);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_bt1->isoc_out = ep;
+		addr = ep->address;
+		wcn_usb_dev->out_ep[addr] = ep;
+
+		ep = usb_ep_autoconfig(cdev->gadget, &bt1_fs_isoc_in_desc);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_bt0->isoc_in = ep;
+		addr = ep->address & 0xf;
+		wcn_usb_dev->in_ep[addr] = ep;
+
+		/* support all relevant hardware speeds... we expect that when
+		 * hardware is dual speed, all bulk-capable endpoints work at
+		 * both speeds
+		 */
+		bt1_hs_isoc_out_desc.bEndpointAddress = bt1_fs_isoc_out_desc.bEndpointAddress;
+		bt1_hs_isoc_in_desc.bEndpointAddress = bt1_fs_isoc_in_desc.bEndpointAddress;
+
+		bt1_ss_isoc_out_desc.bEndpointAddress = bt0_fs_int_in_desc.bEndpointAddress;
+		bt1_ss_isoc_in_desc.bEndpointAddress = bt0_fs_bulk_out_desc.bEndpointAddress;
+
+		status = usb_assign_descriptors(f, bt1_fs_function, bt1_hs_function,
+				bt1_ss_function);
+		if (status)
+			goto fail;
+	}
+	else {
+		wifi_interface_desc.bInterfaceNumber = status;
+		for(i = 0; i < 2; i++)
+		{
+			ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_in_desc[i]);
+			if (!ep)
+				goto fail;
+			addr = ep->address & 0xf;
+			wcn_usb_dev->in_ep[addr] = ep;
+
+			/* support all relevant hardware speeds... we expect that when
+			 * hardware is dual speed, all bulk-capable endpoints work at
+			 * both speeds
+			 */
+			wifi_hs_bulk_in_desc[i].bEndpointAddress = wifi_fs_bulk_in_desc[i].bEndpointAddress;
+			wifi_ss_bulk_in_desc[i].bEndpointAddress = wifi_fs_bulk_in_desc[i].bEndpointAddress;
+		}
+
+		for(i = 0; i < 6; i++)
+		{
+			ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_out_desc[i]);
+			if (!ep)
+				goto fail;
+			addr = ep->address;
+			wcn_usb_dev->out_ep[addr] = ep;
+			wifi_hs_bulk_out_desc[i].bEndpointAddress = wifi_fs_bulk_out_desc[i].bEndpointAddress;
+			wifi_ss_bulk_out_desc[i].bEndpointAddress = wifi_fs_bulk_out_desc[i].bEndpointAddress;
+		}
+		
+		/* allocate instance-specific endpoints */
+		ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_in_desc[2]);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_wifi->int_in = ep;
+		addr = ep->address & 0xf;
+		wcn_usb_dev->in_ep[addr] = ep;
+		wifi_hs_bulk_out_desc[2].bEndpointAddress = wifi_fs_bulk_in_desc[2].bEndpointAddress;
+		wifi_ss_bulk_out_desc[2].bEndpointAddress = wifi_fs_bulk_in_desc[2].bEndpointAddress;
+
+		ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_out_desc[6]);
+		if (!ep)
+			goto fail;
+		wcn_usb_dev->wcn_wifi->bulk_out = ep;
+		addr = ep->address;
+		wcn_usb_dev->out_ep[addr] = ep;
+		wifi_hs_bulk_out_desc[6].bEndpointAddress = wifi_fs_bulk_out_desc[6].bEndpointAddress;
+		wifi_ss_bulk_out_desc[6].bEndpointAddress = wifi_fs_bulk_out_desc[6].bEndpointAddress;
+		
+	
+		status = usb_assign_descriptors(f, wifi_fs_function, wifi_hs_function,
+				wifi_ss_function);
+		if (status)
+			goto fail;
+	}
+
 
 	status = -ENODEV;
 
-	/* allocate instance-specific endpoints */
-	ep = usb_ep_autoconfig(cdev->gadget, &gser_fs_in_desc);
-	if (!ep)
-		goto fail;
-	gser->port.in = ep;
-
-	ep = usb_ep_autoconfig(cdev->gadget, &gser_fs_out_desc);
-	if (!ep)
-		goto fail;
-	gser->port.out = ep;
-
-	/* support all relevant hardware speeds... we expect that when
-	 * hardware is dual speed, all bulk-capable endpoints work at
-	 * both speeds
-	 */
-	gser_hs_in_desc.bEndpointAddress = gser_fs_in_desc.bEndpointAddress;
-	gser_hs_out_desc.bEndpointAddress = gser_fs_out_desc.bEndpointAddress;
-
-	gser_ss_in_desc.bEndpointAddress = gser_fs_in_desc.bEndpointAddress;
-	gser_ss_out_desc.bEndpointAddress = gser_fs_out_desc.bEndpointAddress;
-
-	status = usb_assign_descriptors(f, gser_fs_function, gser_hs_function,
-			gser_ss_function);
-	if (status)
-		goto fail;
-	dev_dbg(&cdev->gadget->dev, "generic ttyGS%d: %s speed IN/%s OUT/%s\n",
-		gser->port_num,
-		gadget_is_superspeed(c->cdev->gadget) ? "super" :
-		gadget_is_dualspeed(c->cdev->gadget) ? "dual" : "full",
-		gser->port.in->name, gser->port.out->name);
 	return 0;
 
 fail:
@@ -570,72 +684,7 @@ fail:
 	return status;
 }
 
-static inline struct f_serial_opts *to_f_serial_opts(struct config_item *item)
-{
-	return container_of(to_config_group(item), struct f_serial_opts,
-			    func_inst.group);
-}
-
-static void serial_attr_release(struct config_item *item)
-{
-	struct f_serial_opts *opts = to_f_serial_opts(item);
-
-	usb_put_function_instance(&opts->func_inst);
-}
-
-static struct configfs_item_operations serial_item_ops = {
-	.release	= serial_attr_release,
-};
-
-static ssize_t f_serial_port_num_show(struct config_item *item, char *page)
-{
-	return sprintf(page, "%u\n", to_f_serial_opts(item)->port_num);
-}
-
-CONFIGFS_ATTR_RO(f_serial_, port_num);
-
-static struct configfs_attribute *acm_attrs[] = {
-	&f_serial_attr_port_num,
-	NULL,
-};
-
-static struct config_item_type serial_func_type = {
-	.ct_item_ops	= &serial_item_ops,
-	.ct_attrs	= acm_attrs,
-	.ct_owner	= THIS_MODULE,
-};
-
-static void gser_free_inst(struct usb_function_instance *f)
-{
-	struct f_serial_opts *opts;
-
-	opts = container_of(f, struct f_serial_opts, func_inst);
-	gserial_free_line(opts->port_num);
-	kfree(opts);
-}
-
-static struct usb_function_instance *wcn_alloc_inst(void)
-{
-	struct f_serial_opts *opts;
-	int ret;
-
-	opts = kzalloc(sizeof(*opts), GFP_KERNEL);
-	if (!opts)
-		return ERR_PTR(-ENOMEM);
-
-	opts->func_inst.free_func_inst = gser_free_inst;
-	ret = gserial_alloc_line(&opts->port_num);
-	if (ret) {
-		kfree(opts);
-		return ERR_PTR(ret);
-	}
-	config_group_init_type_name(&opts->func_inst.group, "",
-				    &serial_func_type);
-
-	return &opts->func_inst;
-}
-
-static void gser_free(struct usb_function *f)
+static void wcn_free(struct usb_function *f)
 {
 	struct f_gser *serial;
 
@@ -648,34 +697,72 @@ static void wcn_unbind(struct usb_configuration *c, struct usb_function *f)
 	usb_free_all_descriptors(f);
 }
 
-static struct usb_function *wcn_alloc(struct usb_function_instance *fi)
+static struct usb_function *wcn_func_alloc(const char * name)
 {
 	struct f_gser	*gser;
 	struct f_serial_opts *opts;
 
+	struct wcn_func_bt0 *wcn_bt0;
+	struct wcn_func_bt1 *wcn_bt1;
+	struct wcn_func_wifi *wcn_wifi;
+
+	struct usb_function		*func;
+
 	/* allocate and initialize one new instance */
-	gser = kzalloc(sizeof(*gser), GFP_KERNEL);
-	if (!gser)
-		return ERR_PTR(-ENOMEM);
+	if(!strncmp(name,"wcn_bt0",strlen("wcn_bt0"))){
+		
+		wcn_bt0= usb_malloc(sizeof(struct wcn_func_bt0));
+		if (!wcn_bt0)
+			return ERR_PTR(-ENOMEM);
+		wcn_usb_dev.wcn_bt0 = wcn_bt0;
+		func = &wcn_bt0->func;
+	} else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
+		
+		wcn_bt1= usb_malloc(sizeof(struct wcn_func_wifi));
+		if (!wcn_bt1)
+			return ERR_PTR(-ENOMEM);
+		wcn_usb_dev.wcn_bt1 = wcn_bt1;
+		func = &wcn_bt1->func;
+	} else {
+		wcn_wifi= usb_malloc(sizeof(struct wcn_func_wifi));
+		if (!wcn_wifi)
+			return ERR_PTR(-ENOMEM);
+		wcn_usb_dev.wcn_wifi = wcn_wifi;
+		func = &wcn_wifi->func;
+	}
+	func->name = func->fd->name;
+	func->strings = wcn_strings;
+	func->bind = wcn_bind;
+	func->unbind = wcn_unbind;
+	func->set_alt = wcn_set_alt;
+	func->setup = wcn_setup;
+	func->disable = wcn_disable;
+	func->free_func = wcn_free;
 
-	opts = container_of(fi, struct f_serial_opts, func_inst);
-
-	gser->port_num = opts->port_num;
-
-	f_wcn_dev->port.func.name = "gser";
-	gser->port.func.strings = gser_strings;
-	gser->port.func.bind = wcn_bind;
-	gser->port.func.unbind = wcn_unbind;
-	gser->port.func.set_alt = w_set_alt;
-	gser->port.func.setup = gser_setup;
-	gser->port.func.disable = gser_disable;
-	gser->port.func.free_func = wcn_free;
-
-	return &gser->port.func;
+	return func;
 }
 
-DECLARE_USB_FUNCTION_INIT(wcn_bt0, wcn_bt0_alloc_inst, wcn_bt0_alloc);
+static struct usb_function_driver wcn_usb_func[MAX_U_WCN_INTERFACES] = {
+	{
+	.name = __stringify("wcn_bt0"),
+	.alloc_func = wcn_func_alloc,
+	},
+	{
+	.name = __stringify("wcn_bt1"),
+	.alloc_func = wcn_func_alloc,
+	},
+	{
+	.name = __stringify("wcn_wifi"),
+	.alloc_func = wcn_func_alloc,
+	},
+};	
 
 
-usb_dev_chninit(_name ## func_init);					\
-usb_dev_chndeinit(_name ## func_exit)
+static int  wcn_func_init(u8 idx)
+{
+	return usb_function_register(&wcn_usb_func[idx]);
+}								\
+static void  wcn_func_exit(u8 idx)
+{
+	usb_function_unregister(&wcn_usb_func[idx]);
+}
