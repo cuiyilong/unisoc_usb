@@ -11,12 +11,7 @@
 
 /* #define VERBOSE_DEBUG */
 
-#include <linux/kallsyms.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/device.h>
-#include <linux/utsname.h>
+
 
 #include <linux/usb/composite.h>
 #include <linux/usb/otg.h>
@@ -179,7 +174,6 @@ ep_found:
 	}
 	return 0;
 }
-EXPORT_SYMBOL_GPL(config_ep_by_speed);
 
 /**
  * usb_add_function() - add a function to a configuration
@@ -244,7 +238,7 @@ done:
 				function->name, function, value);
 	return value;
 }
-EXPORT_SYMBOL_GPL(usb_add_function);
+
 
 void usb_remove_function(struct usb_configuration *c, struct usb_function *f)
 {
@@ -256,7 +250,7 @@ void usb_remove_function(struct usb_configuration *c, struct usb_function *f)
 	if (f->unbind)
 		f->unbind(c, f);
 }
-EXPORT_SYMBOL_GPL(usb_remove_function);
+
 
 /**
  * usb_function_deactivate - prevent function and gadget enumeration
@@ -283,17 +277,17 @@ int usb_function_deactivate(struct usb_function *function)
 	unsigned long			flags;
 	int				status = 0;
 
-	spin_lock_irqsave(&cdev->lock, flags);
+	//spin_lock_irqsave(&cdev->lock, flags);
 
 	if (cdev->deactivations == 0)
 		status = usb_gadget_deactivate(cdev->gadget);
 	if (status == 0)
 		cdev->deactivations++;
 
-	spin_unlock_irqrestore(&cdev->lock, flags);
+	//spin_unlock_irqrestore(&cdev->lock, flags);
 	return status;
 }
-EXPORT_SYMBOL_GPL(usb_function_deactivate);
+
 
 /**
  * usb_function_activate - allow function and gadget enumeration
@@ -324,7 +318,7 @@ int usb_function_activate(struct usb_function *function)
 	spin_unlock_irqrestore(&cdev->lock, flags);
 	return status;
 }
-EXPORT_SYMBOL_GPL(usb_function_activate);
+
 
 /**
  * usb_interface_id() - allocate an unused interface ID
@@ -361,7 +355,7 @@ int usb_interface_id(struct usb_configuration *config,
 	}
 	return -ENODEV;
 }
-EXPORT_SYMBOL_GPL(usb_interface_id);
+
 
 static u8 encode_bMaxPower(enum usb_device_speed speed,
 		struct usb_configuration *c)
@@ -770,7 +764,6 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_add_config_only);
 
 /**
  * usb_add_config() - add a configuration to a device.
@@ -853,7 +846,7 @@ done:
 				config->bConfigurationValue, status);
 	return status;
 }
-EXPORT_SYMBOL_GPL(usb_add_config);
+
 
 static void remove_config(struct usb_composite_dev *cdev,
 			      struct usb_configuration *config)
@@ -1076,7 +1069,7 @@ int usb_string_id(struct usb_composite_dev *cdev)
 	}
 	return -ENODEV;
 }
-EXPORT_SYMBOL_GPL(usb_string_id);
+
 
 /**
  * usb_string_ids() - allocate unused string IDs in batch
@@ -1108,7 +1101,7 @@ int usb_string_ids_tab(struct usb_composite_dev *cdev, struct usb_string *str)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_string_ids_tab);
+
 
 static struct usb_gadget_string_container *copy_gadget_strings(
 		struct usb_gadget_strings **sp, unsigned n_gstrings,
@@ -1221,7 +1214,7 @@ err:
 	kfree(uc);
 	return ERR_PTR(ret);
 }
-EXPORT_SYMBOL_GPL(usb_gstrings_attach);
+
 
 /**
  * usb_string_ids_n() - allocate unused string IDs in batch
@@ -1250,7 +1243,7 @@ int usb_string_ids_n(struct usb_composite_dev *c, unsigned n)
 	c->next_string_id += n;
 	return next + 1;
 }
-EXPORT_SYMBOL_GPL(usb_string_ids_n);
+
 
 /*-------------------------------------------------------------------------*/
 
@@ -1948,8 +1941,8 @@ static void __composite_unbind(struct usb_gadget *gadget, bool unbind_driver)
 
 	composite_dev_cleanup(cdev);
 
-	kfree(cdev->def_manufacturer);
-	kfree(cdev);
+	usb_mem_free(cdev->def_manufacturer);
+	usb_mem_free(cdev);
 	set_gadget_data(gadget, NULL);
 }
 
@@ -2247,7 +2240,6 @@ int usb_composite_probe(struct usb_composite_driver *driver)
 
 	return usb_gadget_probe_driver(gadget_driver);
 }
-EXPORT_SYMBOL_GPL(usb_composite_probe);
 
 /**
  * usb_composite_unregister() - unregister a composite driver
@@ -2260,7 +2252,7 @@ void usb_composite_unregister(struct usb_composite_driver *driver)
 {
 	usb_gadget_unregister_driver(&driver->gadget_driver);
 }
-EXPORT_SYMBOL_GPL(usb_composite_unregister);
+
 
 /**
  * usb_composite_setup_continue() - Continue with the control transfer
@@ -2298,7 +2290,7 @@ void usb_composite_setup_continue(struct usb_composite_dev *cdev)
 
 	spin_unlock_irqrestore(&cdev->lock, flags);
 }
-EXPORT_SYMBOL_GPL(usb_composite_setup_continue);
+
 
 static char *composite_default_mfr(struct usb_gadget *gadget)
 {
@@ -2351,7 +2343,4 @@ void usb_composite_overwrite_options(struct usb_composite_dev *cdev,
 		dev_str[USB_GADGET_PRODUCT_IDX].s = covr->product;
 	}
 }
-EXPORT_SYMBOL_GPL(usb_composite_overwrite_options);
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("David Brownell");

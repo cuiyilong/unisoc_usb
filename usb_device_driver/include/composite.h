@@ -494,7 +494,7 @@ struct usb_composite_dev {
 	int				delayed_status;
 
 	/* protects deactivations and delayed_status counts*/
-	spinlock_t			lock;
+	//spinlock_t			lock;
 
 	unsigned			setup_pending:1;
 	unsigned			os_desc_pending:1;

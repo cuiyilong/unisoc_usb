@@ -1,9 +1,6 @@
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/err.h>
 
-#include <linux/usb/composite.h>
+
+#include <composite.h>
 
 static LIST_HEAD(func_list);
 static DEFINE_MUTEX(func_lock);

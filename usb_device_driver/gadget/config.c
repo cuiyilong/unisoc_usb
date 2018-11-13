@@ -55,7 +55,7 @@ usb_descriptor_fillbuf(void *buf, unsigned buflen,
 	}
 	return dest - (u8 *)buf;
 }
-EXPORT_SYMBOL_GPL(usb_descriptor_fillbuf);
+
 
 /**
  * usb_gadget_config_buf - builts a complete configuration descriptor
@@ -108,7 +108,7 @@ int usb_gadget_config_buf(
 	cp->bmAttributes |= USB_CONFIG_ATT_ONE;
 	return len;
 }
-EXPORT_SYMBOL_GPL(usb_gadget_config_buf);
+
 
 /**
  * usb_copy_descriptors - copy a vector of USB descriptors
@@ -136,7 +136,7 @@ usb_copy_descriptors(struct usb_descriptor_header **src)
 		bytes += (*tmp)->bLength;
 	bytes += (n_desc + 1) * sizeof(*tmp);
 
-	mem = kmalloc(bytes, GFP_KERNEL);
+	mem = usb_malloc(bytes);
 	if (!mem)
 		return NULL;
 
@@ -158,7 +158,7 @@ usb_copy_descriptors(struct usb_descriptor_header **src)
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(usb_copy_descriptors);
+
 
 int usb_assign_descriptors(struct usb_function *f,
 		struct usb_descriptor_header **fs,
@@ -187,7 +187,7 @@ err:
 	usb_free_all_descriptors(f);
 	return -ENOMEM;
 }
-EXPORT_SYMBOL_GPL(usb_assign_descriptors);
+
 
 void usb_free_all_descriptors(struct usb_function *f)
 {
@@ -195,7 +195,7 @@ void usb_free_all_descriptors(struct usb_function *f)
 	usb_free_descriptors(f->hs_descriptors);
 	usb_free_descriptors(f->ss_descriptors);
 }
-EXPORT_SYMBOL_GPL(usb_free_all_descriptors);
+
 
 struct usb_descriptor_header *usb_otg_descriptor_alloc(
 				struct usb_gadget *gadget)
@@ -211,7 +211,7 @@ struct usb_descriptor_header *usb_otg_descriptor_alloc(
 	otg_desc = usb_malloc(length);
 	return otg_desc;
 }
-EXPORT_SYMBOL_GPL(usb_otg_descriptor_alloc);
+
 
 int usb_otg_descriptor_init(struct usb_gadget *gadget,
 		struct usb_descriptor_header *otg_desc)
@@ -250,4 +250,4 @@ int usb_otg_descriptor_init(struct usb_gadget *gadget,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_otg_descriptor_init);
+

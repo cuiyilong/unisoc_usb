@@ -322,10 +322,9 @@ static inline int usb_ep_disable(struct usb_ep *ep)
  *
  * Returns the request, or null if one could not be allocated.
  */
-static inline struct usb_request *usb_ep_alloc_request(struct usb_ep *ep,
-						       gfp_t gfp_flags)
+static inline struct usb_request *usb_ep_alloc_request(struct usb_ep *ep)
 {
-	return ep->ops->alloc_request(ep, gfp_flags);
+	return ep->ops->alloc_request(ep);
 }
 
 /**
@@ -401,9 +400,9 @@ static inline void usb_ep_free_request(struct usb_ep *ep,
  * reported when the usb peripheral is disconnected.
  */
 static inline int usb_ep_queue(struct usb_ep *ep,
-			       struct usb_request *req, gfp_t gfp_flags)
+			       struct usb_request *req)
 {
-	return ep->ops->queue(ep, req, gfp_flags);
+	return ep->ops->queue(ep, req);
 }
 
 /**

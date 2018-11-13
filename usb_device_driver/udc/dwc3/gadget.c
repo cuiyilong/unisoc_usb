@@ -16,19 +16,13 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/kernel.h>
-#include <linux/delay.h>
-#include <linux/slab.h>
-#include <linux/spinlock.h>
-#include <linux/platform_device.h>
 #include <linux/pm_runtime.h>
 #include <linux/interrupt.h>
-#include <linux/io.h>
 #include <linux/list.h>
-#include <linux/dma-mapping.h>
 
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
+
+#include <ch9.h>
+#include <gadget.h>
 
 #include "debug.h"
 #include "core.h"
@@ -1229,8 +1223,7 @@ out:
 	return ret;
 }
 
-static int dwc3_gadget_ep_queue(struct usb_ep *ep, struct usb_request *request,
-	gfp_t gfp_flags)
+static int dwc3_gadget_ep_queue(struct usb_ep *ep, struct usb_request *request)
 {
 	struct dwc3_request		*req = to_dwc3_request(request);
 	struct dwc3_ep			*dep = to_dwc3_ep(ep);
@@ -1771,9 +1764,14 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	if (dwc->dr_mode == USB_DR_MODE_PERIPHERAL)
 		dwc3_core_generic_reset(dwc);
 
+#if 0 
 	irq = platform_get_irq(to_platform_device(dwc->dev), 0);
 	ret = request_threaded_irq(irq, dwc3_interrupt, dwc3_thread_interrupt,
 			IRQF_SHARED, "dwc3", dwc);
+#else
+	irq = USB_INT_NUM;
+
+#endif
 	if (ret) {
 		dev_err(dwc->dev, "failed to request irq #%d --> %d\n",
 				irq, ret);
@@ -1781,7 +1779,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	}
 	dwc->irq_gadget = irq;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 
 	if (dwc->gadget_driver) {
 		dev_err(dwc->dev, "%s is already bound to %s\n",
@@ -1801,12 +1799,12 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	if (pm_runtime_active(dwc->dev))
 		__dwc3_gadget_start(dwc);
 
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return 0;
 
 err1:
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 	free_irq(irq, dwc);
 err0:
 	return ret;

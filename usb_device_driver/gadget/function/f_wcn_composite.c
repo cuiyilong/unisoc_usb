@@ -1,6 +1,6 @@
 
 /*
- * f_serial.c - generic USB serial function driver
+ * f_wcn_composite.c - generic USB WCN function driver
  *
  * Copyright (C) 2003 Al Borchers (alborchers@steinerpoint.com)
  * Copyright (C) 2008 by David Brownell
