@@ -49,6 +49,11 @@
 #define USB_DIR_OUT			0		/* to device */
 #define USB_DIR_IN			0x80		/* to host */
 
+#define UE_GET_DIR(a)	((a) & USB_DIR_IN)		/* get dir */
+#define UE_ADDR			0xf		/* addr */
+#define UE_GET_ADDR(a)	((a) & UE_ADDR)		/* get addr */
+
+
 /*
  * USB types, the second of three bRequestType fields
  */

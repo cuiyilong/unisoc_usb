@@ -1,4 +1,4 @@
-#define IN_CHN_TO_EP_ADDR(chn) (chn -0x10 + 0x80) 
+#define IN_CHN_TO_EP_ADDR(chn) (chn - 0x10 + 0x80) 
 #define OUT_CHN_TO_EP_ADDR(chn) chn 
 
 static mchn_bus_ops usb_bus_ops;
@@ -31,11 +31,25 @@ static int usb_dev_chndeinit(mchn_ops_t *ops)
 	wcn_func_exit(wcn_chn_to_usb_func(ops->chn, ops->inout));
 }
 
-wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
+void wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
 {
+	
+}
+int wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
+{
+	struct usb_ep *ep;
+	struct usb_request *req;
+	int ret;
 	u8 ep_addr;
 	ep_addr = IN_CHN_TO_EP_ADDR(chn);
-	
+	ep = wcn_ep_get(ep_addr);
+	if(!ep)
+		return USB_CHN_ERR;
+	req->buf_n
+	req->complete = wcn_xmit_complete;
+	ret= usb_ep_queue(ep,req);
+
+	return ret;
 }
 
 int usb_chn_push_link(int chn, cpdu_t *head, cpdu_t *tail, int num)

@@ -13,8 +13,6 @@
 
 
 
-#include "u_serial.h"
-
 
 /* notification endpoint uses smallish and infrequent fixed-size messages */
 
@@ -371,7 +369,7 @@ static struct usb_endpoint_descriptor wifi_ss_bulk_in_desc = {
 };
 
 
-static struct usb_ss_ep_comp_descriptor wifi_ss_bulk_comp_desc = {
+static struct usb_ss_ep_comp_descriptor wifi_ss_bulk_comp_desc[10] = {
 	.bLength =              sizeof wifi_ss_bulk_comp_desc,
 	.bDescriptorType =      USB_DT_SS_ENDPOINT_COMP,
 };
@@ -427,7 +425,13 @@ static inline struct f_gser *func_to_dev(struct usb_function *f)
 
 /*-------------------------------------------------------------------------*/
 
-
+inline struct usb_ep *wcn_ep_get(u8 ep_addr)
+{
+	if(ep_addr & USB_DIR_IN)
+		return wcn_usb_dev->in_ep[UE_GET_ADDR(ep_addr)];
+	else
+		return wcn_usb_dev->out_ep[UE_GET_ADDR(ep_addr)];
+}
 static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 {
 	struct f_gser		*gser = func_to_gser(f);
@@ -699,14 +703,11 @@ static void wcn_unbind(struct usb_configuration *c, struct usb_function *f)
 
 static struct usb_function *wcn_func_alloc(const char * name)
 {
-	struct f_gser	*gser;
-	struct f_serial_opts *opts;
-
 	struct wcn_func_bt0 *wcn_bt0;
 	struct wcn_func_bt1 *wcn_bt1;
 	struct wcn_func_wifi *wcn_wifi;
 
-	struct usb_function		*func;
+	struct usb_function	*func;
 
 	/* allocate and initialize one new instance */
 	if(!strncmp(name,"wcn_bt0",strlen("wcn_bt0"))){
