@@ -1277,11 +1277,11 @@ static void composite_setup_complete(struct usb_ep *ep, struct usb_request *req)
 }
 
 static int composite_ep0_queue(struct usb_composite_dev *cdev,
-		struct usb_request *req, gfp_t gfp_flags)
+		struct usb_request *req)
 {
 	int ret;
 
-	ret = usb_ep_queue(cdev->gadget->ep0, req, gfp_flags);
+	ret = usb_ep_queue(cdev->gadget->ep0, req);
 	if (ret == 0) {
 		if (cdev->req == req)
 			cdev->setup_pending = true;
@@ -1552,6 +1552,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 				value = min(w_length, (u16) value);
 			}
 			break;
+		#ifdef OTG
 		case USB_DT_OTG:
 			if (gadget_is_otg(gadget)) {
 				struct usb_configuration *config;
@@ -1578,6 +1579,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 				memcpy(req->buf, config->descriptors[0], value);
 			}
 			break;
+		#endif
 		}
 		break;
 
@@ -1585,6 +1587,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 	case USB_REQ_SET_CONFIGURATION:
 		if (ctrl->bRequestType != 0)
 			goto unknown;
+		#ifdef OTG
 		if (gadget_is_otg(gadget)) {
 			if (gadget->a_hnp_support)
 				DBG(cdev, "HNP available\n");
@@ -1593,9 +1596,10 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			else
 				VDBG(cdev, "HNP inactive\n");
 		}
-		spin_lock(&cdev->lock);
+		#endif
+		//spin_lock(&cdev->lock);
 		value = set_config(cdev, ctrl, w_value);
-		spin_unlock(&cdev->lock);
+		//spin_unlock(&cdev->lock);
 		break;
 	case USB_REQ_GET_CONFIGURATION:
 		if (ctrl->bRequestType != USB_DIR_IN)
@@ -1780,7 +1784,7 @@ unknown:
 			req->length = value;
 			req->context = cdev;
 			req->zero = value < w_length;
-			value = composite_ep0_queue(cdev, req, GFP_ATOMIC);
+			value = composite_ep0_queue(cdev, req);
 			if (value < 0) {
 				DBG(cdev, "ep_queue --> %d\n", value);
 				req->status = 0;
@@ -1868,7 +1872,7 @@ try_fun_setup:
 		req->length = value;
 		req->context = cdev;
 		req->zero = value < w_length;
-		value = composite_ep0_queue(cdev, req, GFP_ATOMIC);
+		value = composite_ep0_queue(cdev, req);
 		if (value < 0) {
 			DBG(cdev, "ep_queue --> %d\n", value);
 			req->status = 0;
@@ -2280,7 +2284,7 @@ void usb_composite_setup_continue(struct usb_composite_dev *cdev)
 		DBG(cdev, "%s: Completing delayed status\n", __func__);
 		req->length = 0;
 		req->context = cdev;
-		value = composite_ep0_queue(cdev, req, GFP_ATOMIC);
+		value = composite_ep0_queue(cdev, req);
 		if (value < 0) {
 			DBG(cdev, "ep_queue --> %d\n", value);
 			req->status = 0;

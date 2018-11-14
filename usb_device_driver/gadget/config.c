@@ -9,18 +9,10 @@
  * (at your option) any later version.
  */
 
-#include <linux/errno.h>
-#include <linux/slab.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/list.h>
-#include <linux/string.h>
-#include <linux/device.h>
-
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/usb/composite.h>
-#include <linux/usb/otg.h>
+#include <usb/ch9.h>
+#include <usb/gadget.h>
+#include <usb/composite.h>
+#include <usb/otg.h>
 
 /**
  * usb_descriptor_fillbuf - fill buffer with descriptors

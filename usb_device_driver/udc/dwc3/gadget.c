@@ -590,7 +590,7 @@ static int __dwc3_gadget_ep_enable(struct dwc3_ep *dep,
 		dep->trb_dequeue = 0;
 		dep->trb_enqueue = 0;
 		memset(dep->trb_pool, 0,
-		       sizeof(struct dwc3_trb) * DWC3_TRB_NUM);
+		       sizeof(struct dwc3_trb) * DWC3_TRB_NUM);   /*cyl ?  */
 
 		/* Link TRB. The HWO bit is never reset */
 		trb_st_hw = &dep->trb_pool[0];
@@ -761,13 +761,12 @@ static int dwc3_gadget_ep_disable(struct usb_ep *ep)
 	return ret;
 }
 
-static struct usb_request *dwc3_gadget_ep_alloc_request(struct usb_ep *ep,
-	gfp_t gfp_flags)
+static struct usb_request *dwc3_gadget_ep_alloc_request(struct usb_ep *ep)
 {
 	struct dwc3_request		*req;
 	struct dwc3_ep			*dep = to_dwc3_ep(ep);
 
-	req = kzalloc(sizeof(*req), gfp_flags);
+	req = usb_malloc(sizeof(*req));
 	if (!req)
 		return NULL;
 
@@ -785,7 +784,7 @@ static void dwc3_gadget_ep_free_request(struct usb_ep *ep,
 	struct dwc3_request		*req = to_dwc3_request(request);
 
 	trace_dwc3_free_request(req);
-	kfree(req);
+	usb_mem_free(req);
 }
 
 /**
@@ -1770,7 +1769,8 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 			IRQF_SHARED, "dwc3", dwc);
 #else
 	irq = USB_INT_NUM;
-
+	ISR_RegHander(irq, dwc3_interrupt);
+	Hisr_RegHander(irq, dwc3_thread_interrupt);
 #endif
 	if (ret) {
 		dev_err(dwc->dev, "failed to request irq #%d --> %d\n",
@@ -1796,9 +1796,12 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	 * to start the gadet. So do not need to start gadget when the dwc3
 	 * enter suspend mode.
 	 */
+	#ifdef SUSPEND
 	if (pm_runtime_active(dwc->dev))
 		__dwc3_gadget_start(dwc);
-
+	#else
+	__dwc3_gadget_start(dwc);
+	#endif
 	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return 0;
@@ -3039,6 +3042,7 @@ static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
 
 		status = dwc3_check_event_buf(dwc, i);
 		if (status == IRQ_WAKE_THREAD) {
+			//disable_irq_nosync(dwc->irq_gadget);
 			disable_irq_nosync(dwc->irq_gadget);
 			dwc3_thread_interrupt(irq, _dwc);
 			ret = IRQ_HANDLED;

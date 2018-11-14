@@ -788,8 +788,10 @@ err0:
 
 void dwc3_core_generic_reset(struct dwc3 *dwc)
 {
+	#ifdef SUSPEND
 	if (pm_runtime_suspended(dwc->dev))
 		return;
+	#endif
 
 	dwc3_core_exit(dwc);
 	udelay(100);

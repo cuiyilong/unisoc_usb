@@ -9,54 +9,62 @@
  * either version 2 of that License or (at your option) any later version.
  */
 
-#ifndef __U_SERIAL_H
-#define __U_SERIAL_H
+#ifndef __U_WCN_COMPOSITE_H
+#define __U_WCN_COMPOSITE_H
 
-#include <linux/usb/composite.h>
-#include <linux/usb/cdc.h>
+#include <usb/composite.h>
+
 
 #define MAX_U_WCN_INTERFACES	3
 #define MAX_FUNC_NAME_LEN 16
+
 const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
 "wcn_bt1",
 "wcn_wifi"
 };
 
-struct f_serial_opts {
-	struct usb_function_instance func_inst;
-	u8 port_num;
-};
-
-/*
- * One non-multiplexed "serial" I/O port ... there can be several of these
- * on any given USB peripheral device, if it provides enough endpoints.
- *
- * The "u_serial" utility component exists to do one thing:  manage TTY
- * style I/O using the USB peripheral endpoints listed here, including
- * hookups to sysfs and /dev for each logical "tty" device.
- *
- * REVISIT at least ACM could support tiocmget() if needed.
- *
- * REVISIT someday, allow multiplexing several TTYs over these endpoints.
- */
-struct wcn_bt0 {
+struct f_wcn_bt0{
 	struct usb_function		func;
-
-	/* port is managed by gserial_{connect,disconnect} */
-	struct gs_port			*ioport;
-
-	struct usb_ep			*in;
-	struct usb_ep			*out;
-
-	/* REVISIT avoid this CDC-ACM support harder ... */
-	struct usb_cdc_line_coding port_line_coding;	/* 9600-8-N-1 etc */
-
-	/* notification callbacks */
-	void (*connect)(struct gserial *p);
-	void (*disconnect)(struct gserial *p);
-	int (*send_break)(struct gserial *p, int duration);
+	struct usb_ep			*int_in;
+	struct usb_ep			*bulk_out;
+	struct usb_ep			*bulk_in;
+	struct list_head	int_tx_reqs, bulk_tx_reqs, rx_reqs;
+	unsigned		qmult;/* default 2 */
 };
+
+struct f_wcn_bt1{
+	struct usb_function		func;
+	struct usb_ep			*isoc_out;
+	struct usb_ep			*isoc_in;
+	struct list_head	tx_reqs, rx_eqs;
+	unsigned		qmult;/* default 2 */
+};
+
+struct f_wcn_wifi{
+	struct usb_function		func;
+	struct usb_ep			*bulk_in[3];
+	struct usb_ep			*bulk_out[7];
+	struct list_head	tx_reqs[3], rx_eqs[7];
+	unsigned		qmult;/* default 10 */
+};
+
+
+struct f_wcn_dev{
+	struct usb_gadget	*gadget;
+	/* inf 0 */
+	struct f_wcn_bt0 *wcn_bt0;
+	/* inf 1 */
+	struct f_wcn_bt1 *wcn_bt1;
+	/* inf 2 */
+	struct f_wcn_wifi *wcn_wifi;
+
+	struct usb_ep	 *in_ep[MAX_SINGLE_DIR_EPS];
+	struct usb_ep	 *out_ep[MAX_SINGLE_DIR_EPS];
+
+};
+struct f_wcn_dev wcn_usb_dev;
+
 
 /* utilities to allocate/free request and buffer */
 struct usb_request *gs_alloc_req(struct usb_ep *ep, unsigned len, gfp_t flags);

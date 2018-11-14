@@ -31,40 +31,6 @@
  * if you can arrange appropriate host side drivers.
  */
 
-struct wcn_func_bt0{
-	struct usb_function		func;
-	struct usb_ep			*int_in;
-	struct usb_ep			*bulk_out;
-	struct usb_ep			*bulk_in;
-};
-
-struct wcn_func_bt1{
-	struct usb_function		func;
-	struct usb_ep			*isoc_out;
-	struct usb_ep			*isoc_in;
-};
-
-struct wcn_func_wifi{
-	struct usb_function		func;
-	struct usb_ep			*in;
-	struct usb_ep			*out;
-};
-
-
-struct f_wcn_dev{
-	/*inf 0*/
-	struct wcn_func_bt0 *wcn_bt0;
-	/*inf 1*/
-	struct wcn_func_bt1 *wcn_bt1;
-	/*inf 2*/
-	struct wcn_func_wifi *wcn_wifi;
-
-	struct usb_ep	 *in_ep[MAX_SINGLE_DIR_EPS];
-	struct usb_ep	 *out_ep[MAX_SINGLE_DIR_EPS];
-
-};
-struct f_wcn_dev wcn_usb_dev;
-
 /*-------------------------------------------------------------------------*/
 
 /* interface descriptor: */
@@ -417,9 +383,17 @@ static struct usb_gadget_strings *wcn_strings[] = {
 };
 
 
-static inline struct f_gser *func_to_dev(struct usb_function *f)
+static inline struct f_wcn_bt0 *func_to_wcn_bt0(struct usb_function *f)
 {
-	return container_of(f, struct f_gser, port.func);
+	return container_of(f, struct f_wcn_bt0, func);
+}
+static inline struct f_wcn_bt1 *func_to_wcn_bt1(struct usb_function *f)
+{
+	return container_of(f, struct f_wcn_bt1, func);
+}
+static inline struct f_wcn_wifi *func_to_wcn_wifi(struct usb_function *f)
+{
+	return container_of(f, struct f_wcn_wifi, func);
 }
 
 
@@ -434,38 +408,103 @@ inline struct usb_ep *wcn_ep_get(u8 ep_addr)
 }
 static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 {
-	struct f_gser		*gser = func_to_gser(f);
+	struct f_wcn_bt0 * wcn_bt0;
+	struct f_wcn_bt1 * wcn_bt1;
+	struct f_wcn_wifi * wcn_wifi;
+	int i;	
+
 	struct usb_composite_dev *cdev = f->config->cdev;
 
 	/* we know alt == 0, so this is an activation or a reset */
-
-	if (gser->port.in->enabled) {
-		dev_dbg(&cdev->gadget->dev,
-			"reset generic ttyGS%d\n", gser->port_num);
-		gserial_disconnect(&gser->port);
-	}
-	if (!gser->port.in->desc || !gser->port.out->desc) {
-		dev_dbg(&cdev->gadget->dev,
-			"activate generic ttyGS%d\n", gser->port_num);
-		if (config_ep_by_speed(cdev->gadget, f, gser->port.in) ||
-		    config_ep_by_speed(cdev->gadget, f, gser->port.out)) {
-			gser->port.in->desc = NULL;
-			gser->port.out->desc = NULL;
-			return -EINVAL;
+	if(!strncmp(f->name,"wcn_bt0",strlen("wcn_bt0"))){
+		wcn_bt0 = func_to_wcn_bt0(f);
+		if(wcn_bt0->int_in->enabled) {
+			gwcn_bt0_disconnect(wcn_bt0);
 		}
+		if (!wcn_bt0->int_in->desc || !wcn_bt0->bulk_in->desc || !wcn_bt0->bulk_out->desc) {
+			if (config_ep_by_speed(cdev->gadget, f, wcn_bt0->int_in) ||
+				config_ep_by_speed(cdev->gadget, f, wcn_bt0->bulk_out) ||
+				config_ep_by_speed(cdev->gadget, f, wcn_bt0->bulk_in)) {
+				wcn_bt0->int_in->desc = NULL;
+				wcn_bt0->bulk_out->desc = NULL;
+				wcn_bt0->bulk_in->desc = NULL;
+				return -EINVAL;
+			}
+		}
+		gwcn_bt0_connect(wcn_bt0);
+	} else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
+		wcn_bt1 = func_to_wcn_bt1(f);
+		if(wcn_bt1->isoc_in->enabled) {
+			gwcn_bt1_disconnect(wcn_bt1);
+		}
+		if (!wcn_bt1->isoc_in->desc || !wcn_bt1->isoc_in->desc) {
+			if (config_ep_by_speed(cdev->gadget, f, wcn_bt1->isoc_out) ||
+				config_ep_by_speed(cdev->gadget, f, wcn_bt1->isoc_in)) {
+				wcn_bt1->isoc_out->desc = NULL;
+				wcn_bt1->isoc_in->desc = NULL;
+				return -EINVAL;
+			}
+		}
+		gwcn_bt1_connect(wcn_bt1);
+	} else {
+		wcn_wifi = func_to_wcn_wifi(f);
+		if(wcn_wifi->bulk_in[0]->enabled) {
+			gwcn_wifi_disconnect(wcn_wifi);
+		}
+		if (!wcn_wifi->bulk_in[0]->desc) {
+
+			for(i = 0; i < 3; i++)
+			{
+				if (config_ep_by_speed(cdev->gadget, f, wcn_wifi->bulk_in[i])) {
+					/*clean all desc*/
+					return -EINVAL;
+				}
+			}
+			for(i = 0; i < 7; i++)
+			{
+				if (config_ep_by_speed(cdev->gadget, f, wcn_wifi->bulk_in[i])) {
+					/*clean all desc*/
+					return -EINVAL;
+				}
+			}
+		}
+		gwcn_wifi_connect(wcn_wifi);
 	}
-	gserial_connect(&gser->port, gser->port_num);
+
 	return 0;
+}
+
+/* Because the data interface supports multiple altsettings,
+ * this WCN function *MUST* implement a get_alt() method.
+ */
+static int wcn_get_alt(struct usb_function *f, unsigned intf)
+{
+	struct f_ecm		*ecm = func_to_ecm(f);
+
+	if (intf == ecm->ctrl_id)
+		return 0;
+	return ecm->port.in_ep->enabled ? 1 : 0;
 }
 
 static void wcn_disable(struct usb_function *f)
 {
-	struct f_gser	*gser = func_to_gser(f);
+	struct f_wcn_bt0 * wcn_bt0;
+	struct f_wcn_bt1 * wcn_bt1;
+	struct f_wcn_wifi * wcn_wifi;
+
 	struct usb_composite_dev *cdev = f->config->cdev;
 
-	dev_dbg(&cdev->gadget->dev,
-		"generic ttyGS%d deactivated\n", gser->port_num);
-	gserial_disconnect(&gser->port);
+
+	if(!strncmp(f->name,"wcn_bt0",strlen("wcn_bt0"))){
+		wcn_bt0 = func_to_wcn_bt0(f);
+		gwcn_bt0_disconnect(wcn_bt0);
+	} else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
+		wcn_bt0 = func_to_wcn_bt1(f);
+		gwcn_bt0_disconnect(wcn_bt1);
+	} else {
+		wcn_wifi = func_to_wcn_wifi(f);
+		gwcn_bt0_disconnect(wcn_wifi);
+	}
 }
 
 /*-------------------------------------------------------------------------*/
@@ -547,6 +586,8 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 	status = usb_interface_id(c, f);
 	if (status < 0)
 		goto fail;
+
+	wcn_usb_dev->gadget = cdev->gadget;
 
 	if(!strncmp(f->name,"wcn_bt0",strlen("wcn_bt0"))){
 		
@@ -630,6 +671,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 			if (!ep)
 				goto fail;
 			addr = ep->address & 0xf;
+			wcn_usb_dev->wcn_wifi->bulk_in[i]= ep;
 			wcn_usb_dev->in_ep[addr] = ep;
 
 			/* support all relevant hardware speeds... we expect that when
@@ -645,6 +687,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 			ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_out_desc[i]);
 			if (!ep)
 				goto fail;
+			wcn_usb_dev->wcn_wifi->bulk_out[i]= ep;
 			addr = ep->address;
 			wcn_usb_dev->out_ep[addr] = ep;
 			wifi_hs_bulk_out_desc[i].bEndpointAddress = wifi_fs_bulk_out_desc[i].bEndpointAddress;
@@ -655,7 +698,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_in_desc[2]);
 		if (!ep)
 			goto fail;
-		wcn_usb_dev->wcn_wifi->int_in = ep;
+		wcn_usb_dev->wcn_wifi->bulk_in[2] = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
 		wifi_hs_bulk_out_desc[2].bEndpointAddress = wifi_fs_bulk_in_desc[2].bEndpointAddress;
@@ -664,7 +707,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		ep = usb_ep_autoconfig(cdev->gadget, &wifi_fs_bulk_out_desc[6]);
 		if (!ep)
 			goto fail;
-		wcn_usb_dev->wcn_wifi->bulk_out = ep;
+		wcn_usb_dev->wcn_wifi->bulk_out[6] = ep;
 		addr = ep->address;
 		wcn_usb_dev->out_ep[addr] = ep;
 		wifi_hs_bulk_out_desc[6].bEndpointAddress = wifi_fs_bulk_out_desc[6].bEndpointAddress;
@@ -690,10 +733,23 @@ fail:
 
 static void wcn_free(struct usb_function *f)
 {
-	struct f_gser *serial;
+	struct f_wcn_bt0 * wcn_bt0;
+	struct f_wcn_bt1 * wcn_bt1;
+	struct f_wcn_wifi * wcn_wifi;
 
-	serial = func_to_gser(f);
-	kfree(serial);
+	struct usb_composite_dev *cdev = f->config->cdev;
+
+
+	if(!strncmp(f->name,"wcn_bt0",strlen("wcn_bt0"))){
+		wcn_bt0 = func_to_wcn_bt0(f);
+		usb_mem_free(wcn_bt0);
+	} else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
+		wcn_bt0 = func_to_wcn_bt1(f);
+		usb_mem_free(wcn_bt1);
+	} else {
+		wcn_wifi = func_to_wcn_wifi(f);
+		usb_mem_free(wcn_wifi);
+	}
 }
 
 static void wcn_unbind(struct usb_configuration *c, struct usb_function *f)
@@ -703,32 +759,32 @@ static void wcn_unbind(struct usb_configuration *c, struct usb_function *f)
 
 static struct usb_function *wcn_func_alloc(const char * name)
 {
-	struct wcn_func_bt0 *wcn_bt0;
-	struct wcn_func_bt1 *wcn_bt1;
-	struct wcn_func_wifi *wcn_wifi;
+	struct f_wcn_bt0 *wcn_bt0;
+	struct f_wcn_bt1 *wcn_bt1;
+	struct f_wcn_wifi *wcn_wifi;
 
 	struct usb_function	*func;
 
 	/* allocate and initialize one new instance */
 	if(!strncmp(name,"wcn_bt0",strlen("wcn_bt0"))){
 		
-		wcn_bt0= usb_malloc(sizeof(struct wcn_func_bt0));
+		wcn_bt0= usb_malloc(sizeof(struct f_wcn_bt0));
 		if (!wcn_bt0)
 			return ERR_PTR(-ENOMEM);
-		wcn_usb_dev.wcn_bt0 = wcn_bt0;
+		wcn_usb_dev->wcn_bt0 = wcn_bt0;
 		func = &wcn_bt0->func;
 	} else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
 		
-		wcn_bt1= usb_malloc(sizeof(struct wcn_func_wifi));
+		wcn_bt1= usb_malloc(sizeof(struct f_wcn_bt1));
 		if (!wcn_bt1)
 			return ERR_PTR(-ENOMEM);
-		wcn_usb_dev.wcn_bt1 = wcn_bt1;
+		wcn_usb_dev->wcn_bt1 = wcn_bt1;
 		func = &wcn_bt1->func;
 	} else {
-		wcn_wifi= usb_malloc(sizeof(struct wcn_func_wifi));
+		wcn_wifi= usb_malloc(sizeof(struct f_wcn_wifi));
 		if (!wcn_wifi)
 			return ERR_PTR(-ENOMEM);
-		wcn_usb_dev.wcn_wifi = wcn_wifi;
+		wcn_usb_dev->wcn_wifi = wcn_wifi;
 		func = &wcn_wifi->func;
 	}
 	func->name = func->fd->name;
@@ -736,6 +792,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 	func->bind = wcn_bind;
 	func->unbind = wcn_unbind;
 	func->set_alt = wcn_set_alt;
+	func->set_alt = wcn_get_alt;
 	func->setup = wcn_setup;
 	func->disable = wcn_disable;
 	func->free_func = wcn_free;
@@ -759,11 +816,11 @@ static struct usb_function_driver wcn_usb_func[MAX_U_WCN_INTERFACES] = {
 };	
 
 
-static int  wcn_func_init(u8 idx)
+int  wcn_func_init(u8 idx)
 {
 	return usb_function_register(&wcn_usb_func[idx]);
 }								\
-static void  wcn_func_exit(u8 idx)
+void  wcn_func_exit(u8 idx)
 {
 	usb_function_unregister(&wcn_usb_func[idx]);
 }
