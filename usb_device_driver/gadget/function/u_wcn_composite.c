@@ -1,3 +1,5 @@
+u32 gwcn_thread_id = SCI_INVALID_BLOCK_ID;
+SCI_EVENT_GROUP_PTR usb_gwcn_event;
 
 
 /* for dual-speed hardware, use deeper queues at high/super speed */
@@ -248,3 +250,191 @@ void gwcn_wifi_disconnect(struct f_wcn_wifi *wcn_wifi)
 
 }
 
+static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
+{
+	struct list_head *rx_reqs = (struct list_head *)req->context;
+	struct eth_dev	*dev = ep->driver_data;
+	int		status = req->status;
+	bool		queue = 0;
+
+	int chn = OUT_EP_ADDR_TO_CHN(ep->address);
+
+	switch (status) {
+
+	/* normal completion */
+	case 0:
+		
+
+		
+		bus_hw_pop_link(chn, req->buf_head, req->buf_head, req->buf_num);
+		
+
+		if (!status)
+			queue = 1;
+		break;
+
+	/* software-driven interface shutdown */
+	case -ECONNRESET:		/* unlink */
+	case -ESHUTDOWN:		/* disconnect etc */
+		VDBG(dev, "rx shutdown, code %d\n", status);
+		goto quiesce;
+
+	/* for hardware automagic (such as pxa) */
+	case -ECONNABORTED:		/* endpoint reset */
+		DBG(dev, "rx %s reset\n", ep->name);
+		defer_kevent(dev, WORK_RX_MEMORY);
+quiesce:
+		dev_kfree_skb_any(skb);
+		goto clean;
+
+	/* data overrun */
+	case -EOVERFLOW:
+		/* FALLTHROUGH */
+	default:
+		queue = 1;
+		dev_kfree_skb_any(skb);
+		dev->net->stats.rx_errors++;
+		DBG(dev, "rx status %d\n", status);
+		break;
+	}
+
+clean:
+	spin_lock(&dev->req_lock);
+	list_add(&req->list, &dev->rx_reqs);
+	spin_unlock(&dev->req_lock);
+
+	
+
+	SCI_SetEvent(usb_gwcn_event, 0x1, SCI_OR);
+
+}
+int usb_wcn_rx_submit()
+{
+	struct usb_ep *ep;
+	struct usb_request *req;
+	struct list_head *tx_reqs;
+
+	int retval;
+
+
+	/* get free buffer */
+
+	req->buf = skb->data;
+	req->length = size;
+	req->complete = rx_complete;
+	req->context = skb;
+
+	retval = usb_ep_queue(out, req);
+}
+
+static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
+{
+	struct list_head *tx_reqs = (struct list_head *)req->context;
+
+	int chn = IN_EP_ADDR_TO_CHN(ep->address);
+
+
+	switch (req->status) {
+	default:
+		
+		/* FALLTHROUGH */
+	case -ECONNRESET:		/* unlink */
+	case -ESHUTDOWN:		/* disconnect etc */
+		break;
+	case 0:
+		
+	}
+
+	/* tx finish: pop back to module*/
+	
+	bus_hw_pop_link(chn, req->buf_head, req->buf_head, req->buf_num);
+	req->buf_head = req->buf_head = NULL;
+
+	list_add_tail(&req->list, tx_reqs);
+	
+}
+int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
+{
+	struct usb_ep *ep;
+	struct usb_request *req;
+	struct list_head *tx_reqs;
+	
+	int ret;
+	u8 ep_addr;
+
+	mchn_info_t *mchn = mchn_info();
+
+	ep_addr = IN_CHN_TO_EP_ADDR(chn);
+	ep = wcn_ep_get(ep_addr);
+	if(!ep)
+		return USB_CHN_ERR;
+
+	tx_reqs = wcn_usb_request_queue_get(ep_addr);
+	if (unlikely(!tx_reqs)) {
+		return USB_CHN_ERR;
+	}
+
+	if (list_empty(&tx_reqs)) {
+		return USB_TX_BUSY;
+	}
+
+	req = container_of(tx_reqs->next, struct usb_request, list);
+	list_del(&req->list);
+
+	/* temporarily stop TX queue when the freelist empties */
+	if (list_empty(&tx_reqs))
+		usb_stop_queue();
+
+	req->buf_num = num;
+	req->context = tx_reqs;
+	req->buf_head = head;
+	req->buf_tail = tail;
+	/* buf link or only buf */
+	if (num > 1) {
+
+		req->length = /* cyl?? */
+
+	} else {
+		req->buf = head->buf;
+		req->length = head->len;
+	}
+	
+	
+	req->complete = usb_wcn_xmit_complete;
+	ret= usb_ep_queue(ep,req);
+
+	return ret;
+}
+
+
+void gwcn_usb_trans_task(u32 argc, void *data)
+{
+	u32 usb_gwcn_event_flag = 0;
+	while(1) {
+		SCI_GetEvent(usb_gwcn_event, 0xffff, SCI_OR_CLEAR, &usb_gwcn_event_flag, SCI_WAIT_FOREVER);
+		if (usb_gwcn_event != 0x1)
+			continue;
+		
+	}
+}
+
+
+int gwcn_task_init(void)
+{
+	/* init rx task */
+	gwcn_thread_id = SCI_CreateThread("usb_gwcn_task","usb_gwcn_queue",gwcn_usb_trans_task,0,NULL,
+		2048,10,SCI_PRIOTY_HIGHEST,SCI_PREEMPT,SCI_AUTO_ACTIVATE);
+	if (gwcn_thread_id == SCI_INVALID_BLOCK_ID) {
+		SCI_ASSERT(0);
+		return -1;
+	}
+
+	/* init event */
+	usb_gwcn_event = SCI_CreateEvent("usb_gwcn_trans_event");
+	if (usb_gwcn_event == SCI_NULL) {
+		SCI_ASSERT(0);
+		return -1;
+	}
+
+	return 0;
+}

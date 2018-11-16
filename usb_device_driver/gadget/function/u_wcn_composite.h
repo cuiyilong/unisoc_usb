@@ -37,7 +37,7 @@ struct f_wcn_bt1{
 	struct usb_function		func;
 	struct usb_ep			*isoc_out;
 	struct usb_ep			*isoc_in;
-	struct list_head	tx_reqs, rx_eqs;
+	struct list_head	tx_reqs, rx_reqs;
 	unsigned		qmult;/* default 2 */
 };
 
@@ -45,7 +45,7 @@ struct f_wcn_wifi{
 	struct usb_function		func;
 	struct usb_ep			*bulk_in[3];
 	struct usb_ep			*bulk_out[7];
-	struct list_head	tx_reqs[3], rx_eqs[7];
+	struct list_head	tx_reqs[3], rx_reqs[7];
 	unsigned		qmult;/* default 10 */
 };
 
@@ -61,6 +61,9 @@ struct f_wcn_dev{
 
 	struct usb_ep	 *in_ep[MAX_SINGLE_DIR_EPS];
 	struct usb_ep	 *out_ep[MAX_SINGLE_DIR_EPS];
+
+	struct list_head	*in_req[MAX_SINGLE_DIR_EPS];
+	struct list_head	*out_req[MAX_SINGLE_DIR_EPS];
 
 };
 struct f_wcn_dev wcn_usb_dev;

@@ -94,9 +94,16 @@ struct usb_request {
 	unsigned		length;
 	dma_addr_t		dma;
 
+#if _linux_
 	struct scatterlist	*sg;
 	unsigned		num_sgs;
 	unsigned		num_mapped_sgs;
+#else
+	cpdu_t	*buf_head;
+	cpdu_t	*buf_tail;
+	unsigned	buf_num;
+#endif
+
 
 	unsigned		stream_id:16;
 	unsigned		no_interrupt:1;

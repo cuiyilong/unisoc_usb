@@ -399,6 +399,14 @@ static inline struct f_wcn_wifi *func_to_wcn_wifi(struct usb_function *f)
 
 /*-------------------------------------------------------------------------*/
 
+inline struct list_head *wcn_usb_request_queue_get(u8 ep_addr)
+{
+	if(ep_addr & USB_DIR_IN)
+		return wcn_usb_dev->in_req[UE_GET_ADDR(ep_addr)];
+	else
+		return wcn_usb_dev->out_req[UE_GET_ADDR(ep_addr)];
+}
+
 inline struct usb_ep *wcn_ep_get(u8 ep_addr)
 {
 	if(ep_addr & USB_DIR_IN)
@@ -599,6 +607,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_bt0->int_in = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
+		wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_bt0->int_tx_reqs;
 
 		ep = usb_ep_autoconfig(cdev->gadget, &bt0_fs_bulk_out_desc);
 		if (!ep)
@@ -606,6 +615,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_bt0->bulk_out = ep;
 		addr = ep->address;
 		wcn_usb_dev->out_ep[addr] = ep;
+		wcn_usb_dev->out_req[addr] = &wcn_usb_dev->wcn_bt0->rx_reqs;
 		
 		ep = usb_ep_autoconfig(cdev->gadget, &bt0_fs_bulk_in_desc);
 		if (!ep)
@@ -613,6 +623,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_bt0->bulk_in = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
+		wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_bt0->bulk_tx_reqs;
 
 		/* support all relevant hardware speeds... we expect that when
 		 * hardware is dual speed, all bulk-capable endpoints work at
@@ -640,6 +651,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_bt1->isoc_out = ep;
 		addr = ep->address;
 		wcn_usb_dev->out_ep[addr] = ep;
+		wcn_usb_dev->out_req[addr] = &wcn_usb_dev->wcn_bt1->rx_reqs;
 
 		ep = usb_ep_autoconfig(cdev->gadget, &bt1_fs_isoc_in_desc);
 		if (!ep)
@@ -647,6 +659,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_bt0->isoc_in = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
+		wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_bt1->tx_reqs;
 
 		/* support all relevant hardware speeds... we expect that when
 		 * hardware is dual speed, all bulk-capable endpoints work at
@@ -673,6 +686,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 			addr = ep->address & 0xf;
 			wcn_usb_dev->wcn_wifi->bulk_in[i]= ep;
 			wcn_usb_dev->in_ep[addr] = ep;
+			wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_wifi->tx_reqs[i];
 
 			/* support all relevant hardware speeds... we expect that when
 			 * hardware is dual speed, all bulk-capable endpoints work at
@@ -690,6 +704,8 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 			wcn_usb_dev->wcn_wifi->bulk_out[i]= ep;
 			addr = ep->address;
 			wcn_usb_dev->out_ep[addr] = ep;
+			wcn_usb_dev->out_req[addr] = &wcn_usb_dev->wcn_wifi->rx_reqs[i];
+			
 			wifi_hs_bulk_out_desc[i].bEndpointAddress = wifi_fs_bulk_out_desc[i].bEndpointAddress;
 			wifi_ss_bulk_out_desc[i].bEndpointAddress = wifi_fs_bulk_out_desc[i].bEndpointAddress;
 		}
@@ -701,6 +717,8 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_wifi->bulk_in[2] = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
+		wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_wifi->tx_reqs[2];
+		
 		wifi_hs_bulk_out_desc[2].bEndpointAddress = wifi_fs_bulk_in_desc[2].bEndpointAddress;
 		wifi_ss_bulk_out_desc[2].bEndpointAddress = wifi_fs_bulk_in_desc[2].bEndpointAddress;
 
@@ -710,6 +728,8 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		wcn_usb_dev->wcn_wifi->bulk_out[6] = ep;
 		addr = ep->address;
 		wcn_usb_dev->out_ep[addr] = ep;
+		wcn_usb_dev->out_req[addr] = &wcn_usb_dev->wcn_wifi->rx_reqs[6];
+
 		wifi_hs_bulk_out_desc[6].bEndpointAddress = wifi_fs_bulk_out_desc[6].bEndpointAddress;
 		wifi_ss_bulk_out_desc[6].bEndpointAddress = wifi_fs_bulk_out_desc[6].bEndpointAddress;
 		
@@ -764,6 +784,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 	struct f_wcn_wifi *wcn_wifi;
 
 	struct usb_function	*func;
+	int i;	
 
 	/* allocate and initialize one new instance */
 	if(!strncmp(name,"wcn_bt0",strlen("wcn_bt0"))){
@@ -773,6 +794,10 @@ static struct usb_function *wcn_func_alloc(const char * name)
 			return ERR_PTR(-ENOMEM);
 		wcn_usb_dev->wcn_bt0 = wcn_bt0;
 		func = &wcn_bt0->func;
+		INIT_LIST_HEAD(&wcn_bt0->int_tx_reqs);
+		INIT_LIST_HEAD(&wcn_bt0->bulk_tx_reqs);
+		INIT_LIST_HEAD(&wcn_bt0->rx_reqs);
+
 	} else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
 		
 		wcn_bt1= usb_malloc(sizeof(struct f_wcn_bt1));
@@ -780,12 +805,18 @@ static struct usb_function *wcn_func_alloc(const char * name)
 			return ERR_PTR(-ENOMEM);
 		wcn_usb_dev->wcn_bt1 = wcn_bt1;
 		func = &wcn_bt1->func;
+		INIT_LIST_HEAD(&wcn_bt1->tx_reqs);
+		INIT_LIST_HEAD(&wcn_bt1->rx_reqs);
 	} else {
 		wcn_wifi= usb_malloc(sizeof(struct f_wcn_wifi));
 		if (!wcn_wifi)
 			return ERR_PTR(-ENOMEM);
 		wcn_usb_dev->wcn_wifi = wcn_wifi;
 		func = &wcn_wifi->func;
+		for (i = 0; i < 3; i++)
+			INIT_LIST_HEAD(&wcn_wifi->tx_reqs[i]);
+		for (i = 0; i < 7; i++)
+			INIT_LIST_HEAD(&wcn_wifi->rx_reqs[i]);
 	}
 	func->name = func->fd->name;
 	func->strings = wcn_strings;
