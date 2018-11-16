@@ -1,14 +1,9 @@
-#define IN_CHN_TO_EP_ADDR(chn) (chn - 0x10 + 0x80) 
-#define OUT_CHN_TO_EP_ADDR(chn) chn 
-
-#define IN_EP_ADDR_TO_CHN(addr) (addr - 0x80 + 0x10) 
-#define OUT_EP_ADDR_TO_CHN(addr) addrs
 
 static mchn_bus_ops usb_bus_ops;
 
 /* mchn port to usb endpoint address: 0-15 out/16-31 in*/
 
-static inline u8 wcn_chn_to_usb_intf(u8 chn,int inout)
+inline u8 wcn_chn_to_usb_intf(u8 chn,int inout)
 {	u8 idx = 0;
 
 	if(chn > 16)

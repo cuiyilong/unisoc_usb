@@ -89,6 +89,13 @@ struct usb_ep;
  * it's thinner and promotes more pre-allocation.
  */
 
+struct cpdu_list{
+	struct list_head list;
+	cpdu_t	*buf_head;
+	cpdu_t	*buf_tail;
+	unsigned	buf_num;
+}
+
 struct usb_request {
 	void			*buf;
 	unsigned		length;

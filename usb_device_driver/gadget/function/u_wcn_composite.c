@@ -252,79 +252,92 @@ void gwcn_wifi_disconnect(struct f_wcn_wifi *wcn_wifi)
 
 static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 {
-	struct list_head *rx_reqs = (struct list_head *)req->context;
-	struct eth_dev	*dev = ep->driver_data;
+	struct list_head *rx_reqs;
 	int		status = req->status;
-	bool		queue = 0;
 
-	int chn = OUT_EP_ADDR_TO_CHN(ep->address);
+	struct list_head	*rx_bufs;
+	struct cpdu_list *cpdu;
+
+	struct f_wcn_dev *p_wcn_usb_dev = ep->driver_data;
+
+
+
+
+	rx_reqs = wcn_usb_request_queue_get(ep->address);
+	
 
 	switch (status) {
 
 	/* normal completion */
 	case 0:
+
+		rx_bufs = p_wcn_usb_dev->rx_bufs[]
+		
+		/* add buf to rx list */
+		list_add_tail(&cpdu->list, rx_bufs);
+		
 		
 
-		
-		bus_hw_pop_link(chn, req->buf_head, req->buf_head, req->buf_num);
-		
-
-		if (!status)
-			queue = 1;
 		break;
 
 	/* software-driven interface shutdown */
 	case -ECONNRESET:		/* unlink */
 	case -ESHUTDOWN:		/* disconnect etc */
 		VDBG(dev, "rx shutdown, code %d\n", status);
-		goto quiesce;
 
 	/* for hardware automagic (such as pxa) */
 	case -ECONNABORTED:		/* endpoint reset */
 		DBG(dev, "rx %s reset\n", ep->name);
-		defer_kevent(dev, WORK_RX_MEMORY);
-quiesce:
-		dev_kfree_skb_any(skb);
+
 		goto clean;
 
 	/* data overrun */
 	case -EOVERFLOW:
 		/* FALLTHROUGH */
 	default:
-		queue = 1;
-		dev_kfree_skb_any(skb);
-		dev->net->stats.rx_errors++;
+
 		DBG(dev, "rx status %d\n", status);
 		break;
 	}
 
 clean:
-	spin_lock(&dev->req_lock);
-	list_add(&req->list, &dev->rx_reqs);
-	spin_unlock(&dev->req_lock);
+	//spin_lock(&dev->req_lock);
+	list_add(&req->list, rx_reqs);
+	//spin_unlock(&dev->req_lock);
 
 	
 
 	SCI_SetEvent(usb_gwcn_event, 0x1, SCI_OR);
 
 }
-int usb_wcn_rx_submit()
+int usb_wcn_rx_submit(struct usb_ep *ep)
 {
-	struct usb_ep *ep;
+	
 	struct usb_request *req;
-	struct list_head *tx_reqs;
+	struct list_head *rx_reqs;
 
-	int retval;
+	struct cpdu_list *cpdu;
+
+	ep->driver_data = &wcn_usb_dev;
+
+	rx_reqs = wcn_usb_request_queue_get(ep->address);
+	if (list_empty(&rx_reqs)) {
+		return USB_RX_BUSY;
+	}
+
+	req = container_of(rx_reqs->next, struct usb_request, list);
+	list_del(&req->list);
+
 
 
 	/* get free buffer */
 
-	req->buf = skb->data;
-	req->length = size;
+	req->buf = cpdu->buf_head->buf;
+	req->length = cpdu->buf_head->len;
 	req->complete = rx_complete;
-	req->context = skb;
+	req->context = &cpdu;
 
-	retval = usb_ep_queue(out, req);
+	retval = usb_ep_queue(ep, req);
 }
 
 static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
@@ -332,6 +345,8 @@ static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
 	struct list_head *tx_reqs = (struct list_head *)req->context;
 
 	int chn = IN_EP_ADDR_TO_CHN(ep->address);
+
+	tx_reqs = wcn_usb_request_queue_get(ep->address);
 
 
 	switch (req->status) {
@@ -387,8 +402,8 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 
 	req->buf_num = num;
 	req->context = tx_reqs;
-	req->buf_head = head;
-	req->buf_tail = tail;
+	req->cpdu.buf_head = head;
+	req->cpdu.buf_tail = tail;
 	/* buf link or only buf */
 	if (num > 1) {
 
@@ -410,11 +425,29 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 void gwcn_usb_trans_task(u32 argc, void *data)
 {
 	u32 usb_gwcn_event_flag = 0;
+	int chn;
+
+	struct list_head	*rx_bufs;
+	struct cpdu_list *cpdu;
+
+	
+	
 	while(1) {
 		SCI_GetEvent(usb_gwcn_event, 0xffff, SCI_OR_CLEAR, &usb_gwcn_event_flag, SCI_WAIT_FOREVER);
 		if (usb_gwcn_event != 0x1)
 			continue;
-		
+
+		rx_bufs = 
+		/* hand rx list */
+		while (!list_empty(rx_bufs)){
+			cpdu = list_first_entry(rx_bufs, struct cpdu_list, list);
+			chn = OUT_EP_ADDR_TO_CHN(ep->address);
+			bus_hw_pop_link(chn, cpdu->buf_head, cpdu->buf_head, cpdu->buf_num);
+
+		}
+
+
+		usb_wcn_rx_submit();
 	}
 }
 

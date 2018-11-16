@@ -18,6 +18,15 @@
 #define MAX_U_WCN_INTERFACES	3
 #define MAX_FUNC_NAME_LEN 16
 
+
+#define IN_CHN_TO_EP_ADDR(chn) (chn - 0x10 + 0x80) 
+#define OUT_CHN_TO_EP_ADDR(chn) chn 
+
+#define IN_EP_ADDR_TO_CHN(addr) (addr - 0x80 + 0x10) 
+#define OUT_EP_ADDR_TO_CHN(addr) addr
+
+
+
 const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
 "wcn_bt1",
@@ -64,8 +73,10 @@ struct f_wcn_dev{
 
 	struct list_head	*in_req[MAX_SINGLE_DIR_EPS];
 	struct list_head	*out_req[MAX_SINGLE_DIR_EPS];
-
+	/* func rx buf list */
+	struct list_head	rx_bufs[MAX_U_WCN_INTERFACES];
 };
+
 struct f_wcn_dev wcn_usb_dev;
 
 
