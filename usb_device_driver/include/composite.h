@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef	__LINUX_USB_COMPOSITE_H
-#define	__LINUX_USB_COMPOSITE_H
+#ifndef	__USB_COMPOSITE_H
+#define	__USB_COMPOSITE_H
 
 /*
  * This framework is an optional layer on top of the USB Gadget interface,

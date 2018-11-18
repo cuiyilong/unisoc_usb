@@ -553,7 +553,7 @@ static int wcn_setup(struct usb_function *f,
 		cdev->req->zero = value < w_length;
 		cdev->req->length = value;
 		cdev->req->complete = gser_setup_complete;
-		rc = usb_ep_queue(cdev->gadget->ep0, cdev->req, GFP_ATOMIC);
+		rc = usb_ep_queue(cdev->gadget->ep0, cdev->req);
 		if (rc < 0)
 			dev_err(&cdev->gadget->dev,
 				"setup response queue error\n");

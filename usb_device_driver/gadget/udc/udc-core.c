@@ -17,18 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/device.h>
-#include <linux/list.h>
-#include <linux/err.h>
-#include <linux/dma-mapping.h>
-#include <linux/workqueue.h>
 
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/usb.h>
-#include <linux/usb/charger.h>
+#include <lusb/ch9.h>
+#include <usb/gadget.h>
+#include <usb.h>
+#include <usb/charger.h>
 
 /**
  * struct usb_udc - describes one usb device controller
@@ -88,7 +81,6 @@ int usb_gadget_map_request(struct usb_gadget *gadget,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_gadget_map_request);
 
 void usb_gadget_unmap_request(struct usb_gadget *gadget,
 		struct usb_request *req, int is_in)
@@ -106,7 +98,6 @@ void usb_gadget_unmap_request(struct usb_gadget *gadget,
 				is_in ? DMA_TO_DEVICE : DMA_FROM_DEVICE);
 	}
 }
-EXPORT_SYMBOL_GPL(usb_gadget_unmap_request);
 
 #endif	/* CONFIG_HAS_DMA */
 
@@ -127,7 +118,6 @@ void usb_gadget_giveback_request(struct usb_ep *ep,
 
 	req->complete(ep, req);
 }
-EXPORT_SYMBOL_GPL(usb_gadget_giveback_request);
 
 /* ------------------------------------------------------------------------- */
 
@@ -148,7 +138,6 @@ struct usb_ep *gadget_find_ep_by_name(struct usb_gadget *g, const char *name)
 
 	return NULL;
 }
-EXPORT_SYMBOL_GPL(gadget_find_ep_by_name);
 
 /* ------------------------------------------------------------------------- */
 
@@ -217,7 +206,6 @@ int usb_gadget_ep_match_desc(struct usb_gadget *gadget,
 
 	return 1;
 }
-EXPORT_SYMBOL_GPL(usb_gadget_ep_match_desc);
 
 /* ------------------------------------------------------------------------- */
 
@@ -239,7 +227,6 @@ void usb_gadget_set_state(struct usb_gadget *gadget,
 	gadget->state = state;
 	schedule_work(&gadget->work);
 }
-EXPORT_SYMBOL_GPL(usb_gadget_set_state);
 
 /* ------------------------------------------------------------------------- */
 
@@ -269,7 +256,6 @@ void usb_udc_vbus_handler(struct usb_gadget *gadget, bool status)
 		usb_udc_connect_control(udc);
 	}
 }
-EXPORT_SYMBOL_GPL(usb_udc_vbus_handler);
 
 /**
  * usb_gadget_udc_reset - notifies the udc core that bus reset occurs
@@ -286,7 +272,6 @@ void usb_gadget_udc_reset(struct usb_gadget *gadget,
 	driver->reset(gadget);
 	usb_gadget_set_state(gadget, USB_STATE_DEFAULT);
 }
-EXPORT_SYMBOL_GPL(usb_gadget_udc_reset);
 
 /**
  * usb_gadget_udc_start - tells usb device controller to start up
@@ -356,7 +341,6 @@ int usb_add_gadget_udc(struct usb_gadget *gadget)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_add_gadget_udc);
 
 static void usb_gadget_remove_driver(struct usb_udc *udc)
 {
@@ -388,7 +372,6 @@ void usb_del_gadget_udc(struct usb_gadget *gadget)
 	flush_work(&gadget->work);
 	//usb_charger_exit(gadget);
 }
-EXPORT_SYMBOL_GPL(usb_del_gadget_udc);
 
 /* ------------------------------------------------------------------------- */
 
@@ -446,7 +429,6 @@ out:
 	mutex_unlock(&udc_lock);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(usb_udc_attach_driver);
 
 int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 {
@@ -459,7 +441,6 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 	ret = udc_bind_to_driver(udc, driver);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(usb_gadget_probe_driver);
 
 int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 {
@@ -471,7 +452,6 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(usb_gadget_unregister_driver);
 
 /* ------------------------------------------------------------------------- */
 

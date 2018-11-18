@@ -12,8 +12,8 @@
  * This software is licensed under the GNU GPL version 2.
  */
 
-#ifndef __LINUX_USB_GADGET_H
-#define __LINUX_USB_GADGET_H
+#ifndef __USB_GADGET_H
+#define __USB_GADGET_H
 
 #include <linux/device.h>
 #include <linux/errno.h>
@@ -1283,4 +1283,4 @@ extern void usb_ep_autoconfig_release(struct usb_ep *);
 
 extern void usb_ep_autoconfig_reset(struct usb_gadget *);
 
-#endif /* __LINUX_USB_GADGET_H */
+#endif /* __USB_GADGET_H */

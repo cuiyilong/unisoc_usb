@@ -19,34 +19,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/spinlock.h>
-#include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
-#include <linux/interrupt.h>
-#include <linux/ioport.h>
-#include <linux/io.h>
-#include <linux/list.h>
-#include <linux/delay.h>
-#include <linux/dma-mapping.h>
-#include <linux/of.h>
-#include <linux/acpi.h>
-#include <linux/pinctrl/consumer.h>
 
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/usb/of.h>
-#include <linux/usb/otg.h>
+#include <usb/ch9.h>
+#include <usb/gadget.h>
+#include <usb/of.h>
+#include <usb/otg.h>
 
-#include "platform_data.h"
 #include "core.h"
 #include "gadget.h"
 #include "io.h"
 
 #include "debug.h"
+
+struct dwc3		*dwc;
 
 #define DWC3_DEFAULT_AUTOSUSPEND_DELAY	500 /* ms */
 static int dwc3_para_initial_with_configuration(struct dwc3 *dwc)
@@ -208,7 +193,7 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc)
 static void dwc3_free_one_event_buffer(struct dwc3 *dwc,
 		struct dwc3_event_buffer *evt)
 {
-	dma_free_coherent(dwc->dev, evt->length, evt->buf, evt->dma);
+	usb_dma_mem_free(evt->length, evt->buf, evt->dma);
 }
 
 /**
@@ -224,18 +209,17 @@ static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
 {
 	struct dwc3_event_buffer	*evt;
 
-	evt = devm_kzalloc(dwc->dev, sizeof(*evt), GFP_KERNEL);
+	evt = usb_malloc(sizeof(*evt));
 	if (!evt)
 		return ERR_PTR(-ENOMEM);
 
 	evt->dwc	= dwc;
 	evt->length	= length;
-	evt->cache	= devm_kzalloc(dwc->dev, length, GFP_KERNEL);
+	evt->cache	= usb_malloc(dwc->dev, length);
 	if (!evt->cache)
 		return ERR_PTR(-ENOMEM);
 
-	evt->buf	= dma_alloc_coherent(dwc->dev, length,
-			&evt->dma, GFP_KERNEL);
+	evt->buf	= usb_dma_malloc(length, &evt->dma);
 	if (!evt->buf)
 		return ERR_PTR(-ENOMEM);
 
@@ -274,8 +258,7 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
 	num = DWC3_NUM_INT(dwc->hwparams.hwparams1);
 	dwc->num_event_buffers = num;
 
-	dwc->ev_buffs = devm_kzalloc(dwc->dev, sizeof(*dwc->ev_buffs) * num,
-			GFP_KERNEL);
+	dwc->ev_buffs = usb_malloc(sizeof(*dwc->ev_buffs) * num);
 	if (!dwc->ev_buffs)
 		return -ENOMEM;
 
@@ -913,6 +896,7 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 	case USB_DR_MODE_PERIPHERAL:
 		dwc3_gadget_exit(dwc);
 		break;
+	#ifdef OTG
 	case USB_DR_MODE_HOST:
 		dwc3_host_exit(dwc);
 		break;
@@ -920,6 +904,7 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 		dwc3_host_exit(dwc);
 		dwc3_gadget_exit(dwc);
 		break;
+	#endif
 	default:
 		/* do nothing */
 		break;
@@ -930,7 +915,7 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 
 static int dwc3_probe(void)
 {
-	struct dwc3		*dwc;
+
 	u8			lpm_nyet_threshold;
 	u8			tx_de_emphasis;
 	u8			hird_threshold;
@@ -1139,27 +1124,18 @@ err0:
 	return ret;
 }
 
-static int dwc3_remove(struct platform_device *pdev)
+static int dwc3_remove(void)
 {
-	struct dwc3	*dwc = platform_get_drvdata(pdev);
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
-	pm_runtime_get_sync(&pdev->dev);
-	/*
-	 * restore res->start back to its original value so that, in case the
-	 * probe is deferred, we don't end up getting error in request the
-	 * memory region the next time probe is called.
-	 */
-	res->start -= DWC3_GLOBALS_REGS_START;
+	//pm_runtime_get_sync(&pdev->dev);
 
-	dwc3_debugfs_exit(dwc);
 	dwc3_core_exit_mode(dwc);
 
 	dwc3_core_exit(dwc);
 	dwc3_ulpi_exit(dwc);
 
-	pm_runtime_put_sync(&pdev->dev);
-	pm_runtime_disable(&pdev->dev);
+	//pm_runtime_put_sync(&pdev->dev);
+	//pm_runtime_disable(&pdev->dev);
 
 	dwc3_free_event_buffers(dwc);
 	dwc3_free_scratch_buffers(dwc);
