@@ -880,9 +880,8 @@ static int dwc3_probe(void)
 	int			ret;
 
 	void			*regs = CTL_USB_BASE; /* 0x40D00000 */
-	void			*mem;
 
-	mem = usb_malloc(sizeof(*dwc));
+	dwc = usb_malloc(sizeof(*dwc));
 	if (!dwc)
 		return -ENOMEM;
 
@@ -965,7 +964,6 @@ static int dwc3_probe(void)
 		| (dwc->is_utmi_l1_suspend << 4);
 	dwc->host_suspend_capable = 1;
 
-	//platform_set_drvdata(pdev, dwc);
 	dwc3_cache_hwparams(dwc);
 
 	ret = dwc3_core_get_phy(dwc);
@@ -1026,7 +1024,6 @@ err2:
 
 err1:
 	dwc3_free_event_buffers(dwc);
-	dwc3_ulpi_exit(dwc);
 
 err0:
 

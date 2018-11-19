@@ -93,7 +93,7 @@ struct usb_os_desc {
 	int			ext_prop_count;
 	struct mutex		*opts_mutex;
 	struct config_group	group;
-	struct module		*owner;
+	//struct module		*owner;
 };
 
 /**

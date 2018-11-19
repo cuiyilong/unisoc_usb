@@ -2081,7 +2081,7 @@ static int composite_bind(struct usb_gadget *gadget,
 	if (!cdev)
 		return status;
 
-	spin_lock_init(&cdev->lock);
+	//spin_lock_init(&cdev->lock);
 	cdev->gadget = gadget;
 	set_gadget_data(gadget, cdev);
 	INIT_LIST_HEAD(&cdev->configs);

@@ -17,12 +17,12 @@
  */
 
 
-#include "interrupt.h"
+
 #include "list.h"
 
 
-#include <ch9.h>
-#include <gadget.h>
+#include "ch9.h"
+#include "gadget.h>"
 
 #include "debug.h"
 #include "core.h"
@@ -1772,7 +1772,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 		dwc3_core_generic_reset(dwc);
 
 
-	dwc->irq_gadget = USB_INT_NUM;
+	dwc->irq_gadget = USB_INT_NUM; //cyl int_req_usb  num  29s
 	ret = ISR_RegHander_EX(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt);
 
 	if (ret) {
@@ -1784,7 +1784,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	//spin_lock_irqsave(&dwc->lock, flags);
 
 	if (dwc->gadget_driver) {
-		dev_err(dwc->dev, "%s is already bound to %s\n",
+		dev_err("%s is already bound to %s\n",
 				dwc->gadget.name,
 				dwc->gadget_driver->driver.name);
 		ret = -EBUSY;
@@ -2293,7 +2293,7 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 		dep->resource_index = 0;
 
 		if (usb_endpoint_xfer_isoc(dep->endpoint.desc)) {
-			dev_dbg(dwc->dev, "%s is an Isochronous endpoint\n",
+			dev_dbg("%s is an Isochronous endpoint\n",
 					dep->name);
 			return;
 		}
@@ -2320,7 +2320,7 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 			if (!ret || ret == -EBUSY)
 				return;
 
-			dev_dbg(dwc->dev, "%s: failed to kick transfers\n",
+			dev_dbg("%s: failed to kick transfers\n",
 					dep->name);
 		}
 
@@ -2342,11 +2342,11 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 		case DEPEVT_STREAMEVT_NOTFOUND:
 			/* FALLTHROUGH */
 		default:
-			dev_dbg(dwc->dev, "Couldn't find suitable stream\n");
+			dev_dbg("Couldn't find suitable stream\n");
 		}
 		break;
 	case DWC3_DEPEVT_RXTXFIFOEVT:
-		dev_dbg(dwc->dev, "%s FIFO Overrun\n", dep->name);
+		dev_dbg("%s FIFO Overrun\n", dep->name);
 		break;
 	case DWC3_DEPEVT_EPCMDCMPLT:
 		if (dep->flags & DWC3_EP_CMDCMPLT_BUSY) {
@@ -2915,7 +2915,7 @@ static void dwc3_process_event_entry(struct dwc3 *dwc,
 		break;
 	/* REVISIT what to do with Carkit and I2C events ? */
 	default:
-		dev_err(dwc->dev, "UNKNOWN IRQ type %d\n", event->raw);
+		dev_err("UNKNOWN IRQ type %d\n", event->raw);
 	}
 }
 
