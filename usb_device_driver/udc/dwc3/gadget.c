@@ -1773,9 +1773,8 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 
 	dwc->irq_gadget = USB_INT_NUM;
-	ISR_RegHander(dwc->irq_gadget, dwc3_interrupt);
-	Hisr_RegHander(dwc->irq_gadget, dwc3_thread_interrupt);
-	
+	ret = ISR_RegHander_EX(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt);
+
 	if (ret) {
 		dev_err("failed to request irq #%d --> %d\n",
 				irq, ret);

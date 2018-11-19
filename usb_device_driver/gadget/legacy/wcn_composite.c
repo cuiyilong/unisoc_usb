@@ -9,7 +9,6 @@
 #define GS_VERSION_NAME			GS_LONG_NAME " " GS_VERSION_STR
 
 /*-------------------------------------------------------------------------*/
-USB_GADGET_COMPOSITE_OPTIONS();
 
 /* Thanks to NetChip Technologies for donating this product ID.
 *
@@ -140,6 +139,7 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 	status = strings_dev[STRING_DESCRIPTION_IDX].id;
 	wcn_comp_config_driver.iConfiguration = status;
 
+#ifdef OTG
 	if (gadget_is_otg(cdev->gadget)) {
 		if (!otg_desc[0]) {
 			struct usb_descriptor_header *usb_desc;
@@ -156,15 +156,15 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 		wcn_comp_config_driver[cfg_idx].descriptors = otg_desc;
 		wcn_comp_config_driver[cfg_idx].bmAttributes |= USB_CONFIG_ATT_WAKEUP;
 	}
-
+#endif
 	/* register our configuration */
 	status  = wcn_composite_register_func(cdev, &wcn_comp_config_driver[cfg_idx]);
 	if (status < 0)
 		goto fail1;
 	//usb_ep_autoconfig_reset(cdev->gadget);
 	
-	usb_composite_overwrite_options(cdev, &coverwrite);
-	INFO(cdev, "%s\n", GS_VERSION_NAME);
+	//usb_composite_overwrite_options(cdev, &coverwrite);
+	INFO("%s\n", GS_VERSION_NAME);
 
 	return 0;
 fail1:

@@ -34,12 +34,12 @@
  * the composite model the host can use both functions at the same time.
  */
 
-#include <linux/bcd.h>
-#include <linux/version.h>
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/log2.h>
-#include <linux/configfs.h>
+
+
+#include "ch9.h"
+#include "gadget.h"
+
+
 
 /*
  * USB function drivers should return USB_GADGET_DELAYED_STATUS if they
@@ -51,7 +51,7 @@
 #define USB_GADGET_DELAYED_STATUS       0x7fff	/* Impossibly large value */
 
 /* big enough to hold our biggest descriptor */
-#define USB_COMP_EP0_BUFSIZ	1024
+#define USB_COMP_EP0_BUFSIZ	1024   //cyl need reduce
 
 #define USB_MS_TO_HS_INTERVAL(x)	(ilog2((x * 1000 / 125)) + 1)
 struct usb_configuration;
@@ -242,7 +242,8 @@ int usb_interface_id(struct usb_configuration *, struct usb_function *);
 int config_ep_by_speed(struct usb_gadget *g, struct usb_function *f,
 			struct usb_ep *_ep);
 
-#define	MAX_CONFIG_INTERFACES		16	/* arbitrary; max 255 */
+//#define	MAX_CONFIG_INTERFACES		16	/* arbitrary; max 255 */
+#define	MAX_CONFIG_INTERFACES		4	/* arbitrary; max 255 */ //cyl resize to 4
 
 /**
  * struct usb_configuration - represents one gadget configuration
@@ -392,19 +393,6 @@ struct usb_composite_driver {
 extern int usb_composite_probe(struct usb_composite_driver *driver);
 extern void usb_composite_unregister(struct usb_composite_driver *driver);
 
-/**
- * module_usb_composite_driver() - Helper macro for registering a USB gadget
- * composite driver
- * @__usb_composite_driver: usb_composite_driver struct
- *
- * Helper macro for USB gadget composite drivers which do not do anything
- * special in module init/exit. This eliminates a lot of boilerplate. Each
- * module may only use this macro once, and calling it replaces module_init()
- * and module_exit()
- */
-#define module_usb_composite_driver(__usb_composite_driver) \
-	module_driver(__usb_composite_driver, usb_composite_probe, \
-		       usb_composite_unregister)
 
 extern void usb_composite_setup_continue(struct usb_composite_dev *cdev);
 extern int composite_dev_prepare(struct usb_composite_driver *composite,
@@ -514,57 +502,9 @@ extern int composite_setup(struct usb_gadget *gadget,
 extern void composite_suspend(struct usb_gadget *gadget);
 extern void composite_resume(struct usb_gadget *gadget);
 
-/*
- * Some systems will need runtime overrides for the  product identifiers
- * published in the device descriptor, either numbers or strings or both.
- * String parameters are in UTF-8 (superset of ASCII's 7 bit characters).
- */
-struct usb_composite_overwrite {
-	u16	idVendor;
-	u16	idProduct;
-	u16	bcdDevice;
-	char	*serial_number;
-	char	*manufacturer;
-	char	*product;
-};
-#define USB_GADGET_COMPOSITE_OPTIONS()					\
-	static struct usb_composite_overwrite coverwrite;		\
-									\
-	module_param_named(idVendor, coverwrite.idVendor, ushort, S_IRUGO); \
-	MODULE_PARM_DESC(idVendor, "USB Vendor ID");			\
-									\
-	module_param_named(idProduct, coverwrite.idProduct, ushort, S_IRUGO); \
-	MODULE_PARM_DESC(idProduct, "USB Product ID");			\
-									\
-	module_param_named(bcdDevice, coverwrite.bcdDevice, ushort, S_IRUGO); \
-	MODULE_PARM_DESC(bcdDevice, "USB Device version (BCD)");	\
-									\
-	module_param_named(iSerialNumber, coverwrite.serial_number, charp, \
-			S_IRUGO); \
-	MODULE_PARM_DESC(iSerialNumber, "SerialNumber string");		\
-									\
-	module_param_named(iManufacturer, coverwrite.manufacturer, charp, \
-			S_IRUGO); \
-	MODULE_PARM_DESC(iManufacturer, "USB Manufacturer string");	\
-									\
-	module_param_named(iProduct, coverwrite.product, charp, S_IRUGO); \
-	MODULE_PARM_DESC(iProduct, "USB Product string")
-
-void usb_composite_overwrite_options(struct usb_composite_dev *cdev,
-		struct usb_composite_overwrite *covr);
-
-static inline u16 get_default_bcdDevice(void)
-{
-	u16 bcdDevice;
-
-	bcdDevice = bin2bcd((LINUX_VERSION_CODE >> 16 & 0xff)) << 8;
-	bcdDevice |= bin2bcd((LINUX_VERSION_CODE >> 8 & 0xff));
-	return bcdDevice;
-}
 
 struct usb_function_driver {
 	const char *name;
-	//struct module *mod;
 	struct list_head list;
 	//struct usb_function_instance *(*alloc_inst)(void);
 	struct usb_function *(*alloc_func)(const char *name);
@@ -594,35 +534,16 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 void usb_remove_function(struct usb_configuration *c, struct usb_function *f);
 
 
-#define DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\
-	static struct usb_function_driver _name ## usb_func = {		\
-		.name = __stringify(_name),				\			\
-		.alloc_inst = _inst_alloc,				\
-		.alloc_func = _func_alloc,				\
-	};								
-
-#define DECLARE_USB_FUNCTION_INIT(_name, _inst_alloc, _func_alloc)	\
-	DECLARE_USB_FUNCTION(_name, _inst_alloc, _func_alloc)		\
-	static int  _name ## func_init(void)			\
-	{								\
-		return usb_function_register(&_name ## usb_func);	\
-	}								\
-	static void  _name ## func_exit(void)			\
-	{								\
-		usb_function_unregister(&_name ## usb_func);		\
-	}
-
-
 /* messaging utils */
-#define DBG(d, fmt, args...) \
-	dev_dbg(&(d)->gadget->dev , fmt , ## args)
-#define VDBG(d, fmt, args...) \
-	dev_vdbg(&(d)->gadget->dev , fmt , ## args)
-#define ERROR(d, fmt, args...) \
-	dev_err(&(d)->gadget->dev , fmt , ## args)
-#define WARNING(d, fmt, args...) \
-	dev_warn(&(d)->gadget->dev , fmt , ## args)
-#define INFO(d, fmt, args...) \
-	dev_info(&(d)->gadget->dev , fmt , ## args)
+#define DBG(fmt, args...) \
+	dev_dbg(fmt , ## args)
+#define VDBG(fmt, args...) \
+	dev_vdbg(fmt , ## args)
+#define ERROR(fmt, args...) \
+	dev_err(fmt , ## args)
+#define WARNING(fmt, args...) \
+	dev_warn(fmt , ## args)
+#define INFO(fmt, args...) \
+	dev_info(fmt , ## args)
 
 #endif	/* __LINUX_USB_COMPOSITE_H */

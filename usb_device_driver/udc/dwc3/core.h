@@ -789,7 +789,7 @@ struct dwc3 {
 	struct phy		*usb2_generic_phy;
 	struct phy		*usb3_generic_phy;
 
-	struct ulpi		*ulpi;
+	//struct ulpi		*ulpi;
 
 	void __iomem		*regs;
 	size_t			regs_size;

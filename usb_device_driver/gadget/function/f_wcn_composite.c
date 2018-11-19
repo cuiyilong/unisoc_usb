@@ -555,12 +555,12 @@ static int wcn_setup(struct usb_function *f,
 		cdev->req->complete = gser_setup_complete;
 		rc = usb_ep_queue(cdev->gadget->ep0, cdev->req);
 		if (rc < 0)
-			dev_err(&cdev->gadget->dev,
+			dev_err(
 				"setup response queue error\n");
 	}
 
 	if (value == -EOPNOTSUPP) {
-		dev_warn(&cdev->gadget->dev,
+		dev_warn(
 			 "unknown class-specific control req "
 			 "%02x.%02x v%04x i%04x l%u\n",
 			 ctrl->bRequestType, ctrl->bRequest,

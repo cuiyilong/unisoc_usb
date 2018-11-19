@@ -1,6 +1,6 @@
 
 
-#include <composite.h>
+#include "composite.h"
 
 static LIST_HEAD(func_list);
 static DEFINE_MUTEX(func_lock);
@@ -60,7 +60,6 @@ struct usb_function_instance *usb_get_function_instance(const char *name)
 	if (!IS_ERR(fi))
 		return fi;
 }
-EXPORT_SYMBOL_GPL(usb_get_function_instance);
 
 struct usb_function *usb_get_function(struct usb_function_instance *fi)
 {
@@ -72,7 +71,6 @@ struct usb_function *usb_get_function(struct usb_function_instance *fi)
 	f->fi = fi;
 	return f;
 }
-EXPORT_SYMBOL_GPL(usb_get_function);
 
 void usb_put_function_instance(struct usb_function_instance *fi)
 {
@@ -85,7 +83,6 @@ void usb_put_function_instance(struct usb_function_instance *fi)
 	fi->free_func_inst(fi);
 	//module_put(mod);
 }
-EXPORT_SYMBOL_GPL(usb_put_function_instance);
 
 void usb_put_function(struct usb_function *f)
 {
@@ -94,7 +91,6 @@ void usb_put_function(struct usb_function *f)
 
 	f->free_func(f);
 }
-EXPORT_SYMBOL_GPL(usb_put_function);
 
 int usb_function_register(struct usb_function_driver *newf)
 {
@@ -114,7 +110,6 @@ out:
 	//mutex_unlock(&func_lock);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(usb_function_register);
 
 void usb_function_unregister(struct usb_function_driver *fd)
 {
@@ -122,4 +117,3 @@ void usb_function_unregister(struct usb_function_driver *fd)
 	list_del(&fd->list);
 	mutex_unlock(&func_lock);
 }
-EXPORT_SYMBOL_GPL(usb_function_unregister);
