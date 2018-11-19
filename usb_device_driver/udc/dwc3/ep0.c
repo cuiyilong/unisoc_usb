@@ -16,19 +16,12 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/spinlock.h>
-#include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
-#include <linux/interrupt.h>
-#include <linux/io.h>
-#include <linux/list.h>
-#include <linux/dma-mapping.h>
 
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/usb/composite.h>
+#include <list.h>
+
+#include "ch9.h"
+#include "gadget.h"
+#include "composite.h"
 
 #include "core.h"
 #include "debug.h"
@@ -219,8 +212,7 @@ static int __dwc3_gadget_ep0_queue(struct dwc3_ep *dep,
 	return 0;
 }
 
-int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
-		gfp_t gfp_flags)
+int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request)
 {
 	struct dwc3_request		*req = to_dwc3_request(request);
 	struct dwc3_ep			*dep = to_dwc3_ep(ep);
@@ -230,7 +222,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 
 	int				ret;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	if (!dep->endpoint.desc) {
 		dwc3_trace(trace_dwc3_ep0,
 				"trying to queue request %p to disabled %s",
@@ -246,8 +238,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 	}
 
 	if (dwc->pullups_connected == false) {
-		dev_warn(dwc->dev,
-			 "DWC gadget is disconnected and ignore ep0 queue.\n");
+		dev_warn("DWC gadget is disconnected and ignore ep0 queue.\n");
 		ret = -ESHUTDOWN;
 		goto out;
 	}
@@ -260,7 +251,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 	ret = __dwc3_gadget_ep0_queue(dep, req);
 
 out:
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
@@ -317,13 +308,16 @@ int dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value)
 void dwc3_ep0_out_start(struct dwc3 *dwc)
 {
 	int				ret;
+	u32 type;
 
 	ret = dwc3_ep0_start_trans(dwc, 0, dwc->ctrl_req_addr, 8,
 			DWC3_TRBCTL_CONTROL_SETUP, false);
 	if (ret < 0)
 		dev_warn(dwc->dev, "Enter control setup failed ret = %d", ret);
 
-	complete(&dwc->ep0_in_setup);
+	//complete(&dwc->ep0_in_setup);
+	type = EP0_IN_SETUP;
+	SCI_SetEvent(dwc->ep0_in_setup, type, SCI_OR);
 }
 
 static struct dwc3_ep *dwc3_wIndex_to_dep(struct dwc3 *dwc, __le16 wIndex_le)

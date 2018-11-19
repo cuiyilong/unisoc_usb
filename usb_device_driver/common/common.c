@@ -10,13 +10,29 @@
  * compiled-in as well.  Otherwise, if either of the two stacks is
  * compiled as module, this file is compiled as module as well.
  */
+#include <usb/ch9.h>
+#include <usb/of.h>
+#include <usb/otg.h>
 
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/of.h>
-#include <linux/usb/ch9.h>
-#include <linux/usb/of.h>
-#include <linux/usb/otg.h>
+int read_config_from_ini_string(char *item, const char **val);
+{
+	/* read usb init file */	
+	return 0;
+}
+
+static inline bool read_config_from_ini_bool(const char *propname)
+{
+	
+}
+
+static inline int read_config_from_ini_u8(const char *propname, u8 *val)
+{
+
+}
+static inline int read_config_from_ini_u32(const char *propname, u32 *val)
+{
+
+}
 
 const char *usb_otg_state_string(enum usb_otg_state state)
 {
@@ -41,7 +57,6 @@ const char *usb_otg_state_string(enum usb_otg_state state)
 
 	return names[state];
 }
-EXPORT_SYMBOL_GPL(usb_otg_state_string);
 
 static const char *const speed_names[] = {
 	[USB_SPEED_UNKNOWN] = "UNKNOWN",
@@ -58,7 +73,6 @@ const char *usb_speed_string(enum usb_device_speed speed)
 		speed = USB_SPEED_UNKNOWN;
 	return speed_names[speed];
 }
-EXPORT_SYMBOL_GPL(usb_speed_string);
 
 enum usb_device_speed usb_get_maximum_speed(void)
 {
@@ -66,7 +80,7 @@ enum usb_device_speed usb_get_maximum_speed(void)
 	int err;
 	int i;
 
-	err = device_property_read_string(dev, "maximum-speed", &maximum_speed);
+	err = read_config_from_ini("maximum-speed", &maximum_speed);
 	if (err < 0)
 		return USB_SPEED_UNKNOWN;
 
@@ -76,7 +90,7 @@ enum usb_device_speed usb_get_maximum_speed(void)
 
 	return USB_SPEED_UNKNOWN;
 }
-EXPORT_SYMBOL_GPL(usb_get_maximum_speed);
+
 
 const char *usb_state_string(enum usb_device_state state)
 {
@@ -97,7 +111,7 @@ const char *usb_state_string(enum usb_device_state state)
 
 	return names[state];
 }
-EXPORT_SYMBOL_GPL(usb_state_string);
+
 
 static const char *const usb_dr_modes[] = {
 	[USB_DR_MODE_UNKNOWN]		= "",
@@ -111,7 +125,7 @@ enum usb_dr_mode usb_get_dr_mode(void)
 	const char *dr_mode;
 	int err, i;
 
-	err = device_property_read_string(dev, "dr_mode", &dr_mode);
+	err = read_config_from_ini_string("dr_mode", &dr_mode);
 	if (err < 0)
 		return USB_DR_MODE_UNKNOWN;
 
@@ -121,7 +135,6 @@ enum usb_dr_mode usb_get_dr_mode(void)
 
 	return USB_DR_MODE_UNKNOWN;
 }
-EXPORT_SYMBOL_GPL(usb_get_dr_mode);
 
 #ifdef CONFIG_OF
 /**
@@ -138,7 +151,6 @@ bool of_usb_host_tpl_support(struct device_node *np)
 
 	return false;
 }
-EXPORT_SYMBOL_GPL(of_usb_host_tpl_support);
 
 /**
  * of_usb_update_otg_caps - to update usb otg capabilities according to
@@ -193,8 +205,8 @@ int of_usb_update_otg_caps(struct device_node *np,
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(of_usb_update_otg_caps);
+
 
 #endif
 
-MODULE_LICENSE("GPL");
+

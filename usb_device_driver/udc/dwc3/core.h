@@ -763,8 +763,11 @@ struct dwc3 {
 	dma_addr_t		ep0_bounce_addr;
 	dma_addr_t		scratch_addr;
 	struct dwc3_request	ep0_usb_req;
-	struct completion	ep0_in_setup;
-	struct completion	cmd_complete;
+	
+	//struct completion	ep0_in_setup;
+	//struct completion	cmd_complete;
+	SCI_EVENT_GROUP_PTR ep0_in_setup;
+	SCI_EVENT_GROUP_PTR cmd_complete;
 
 	/* device lock */
 	//spinlock_t		lock;
@@ -855,7 +858,7 @@ struct dwc3 {
 	u8			num_out_eps;
 	u8			num_in_eps;
 
-	void			*mem;
+	//void			*mem;
 
 	struct dwc3_hwparams	hwparams;
 	//struct dentry		*root;
@@ -1115,14 +1118,5 @@ static inline void dwc3_gadget_process_pending_events(struct dwc3 *dwc)
 }
 #endif /* !IS_ENABLED(CONFIG_USB_DWC3_HOST) */
 
-#if IS_ENABLED(CONFIG_USB_DWC3_ULPI)
-int dwc3_ulpi_init(struct dwc3 *dwc);
-void dwc3_ulpi_exit(struct dwc3 *dwc);
-#else
-static inline int dwc3_ulpi_init(struct dwc3 *dwc)
-{ return 0; }
-static inline void dwc3_ulpi_exit(struct dwc3 *dwc)
-{ }
-#endif
 
 #endif /* __DRIVERS_USB_DWC3_CORE_H */

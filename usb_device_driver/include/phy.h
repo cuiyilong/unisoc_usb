@@ -72,7 +72,7 @@ struct usb_phy_io_ops {
 };
 
 struct usb_phy {
-	struct device		*dev;
+	//struct device		*dev;
 	const char		*label;
 	unsigned int		 flags;
 

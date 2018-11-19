@@ -18,10 +18,10 @@
  */
 
 
-#include <lusb/ch9.h>
-#include <usb/gadget.h>
-#include <usb.h>
-#include <usb/charger.h>
+#include "ch9.h"
+#include "gadget.h"
+#include "usb.h"
+
 
 /**
  * struct usb_udc - describes one usb device controller
@@ -113,8 +113,10 @@ void usb_gadget_unmap_request(struct usb_gadget *gadget,
 void usb_gadget_giveback_request(struct usb_ep *ep,
 		struct usb_request *req)
 {
+	#if 0
 	if (likely(req->status == 0))
 		usb_led_activity(USB_LED_EVENT_GADGET);
+	#endif
 
 	req->complete(ep, req);
 }
@@ -208,24 +210,11 @@ int usb_gadget_ep_match_desc(struct usb_gadget *gadget,
 }
 
 /* ------------------------------------------------------------------------- */
-
-static void usb_gadget_state_work(struct work_struct *work)
-{
-	struct usb_gadget *gadget = work_to_gadget(work);
-	struct usb_udc *udc = gadget->udc;
-
-	/* when the gadget state is changed, then report to USB charger */
-	usb_charger_plug_by_gadget(gadget, gadget->state);
-
-	if (udc)
-		sysfs_notify(&udc->dev.kobj, NULL, "state");
-}
-
 void usb_gadget_set_state(struct usb_gadget *gadget,
 		enum usb_device_state state)
 {
 	gadget->state = state;
-	schedule_work(&gadget->work);
+	//schedule_work(&gadget->work);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -326,16 +315,11 @@ int usb_add_gadget_udc(struct usb_gadget *gadget)
 	struct usb_udc		*udc = &g_udc;
 	int			ret = -ENOMEM;
 
-	INIT_WORK(&gadget->work, usb_gadget_state_work);
+	//INIT_WORK(&gadget->work, usb_gadget_state_work);
 
 	udc->gadget = gadget;
 	gadget->udc = udc;
 
-#if 0
-	ret = usb_charger_init(gadget);
-	if (ret)
-		goto err5;
-#endif
 	usb_gadget_set_state(gadget, USB_STATE_NOTATTACHED);
 	udc->vbus = true;
 
@@ -369,7 +353,7 @@ void usb_del_gadget_udc(struct usb_gadget *gadget)
 	if (udc->driver)
 		usb_gadget_remove_driver(udc);
 
-	flush_work(&gadget->work);
+	//flush_work(&gadget->work);
 	//usb_charger_exit(gadget);
 }
 
@@ -398,37 +382,13 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 	return 0;
 err1:
 	if (ret != -EISNAM)
-		dev_err(&udc->dev, "failed to start %s: %d\n",
+		dev_err("failed to start %s: %d\n",
 			udc->driver->function, ret);
 	udc->driver = NULL;
 
 	return ret;
 }
 
-int usb_udc_attach_driver(const char *name, struct usb_gadget_driver *driver)
-{
-	struct usb_udc *udc = NULL;
-	int ret = -ENODEV;
-
-	mutex_lock(&udc_lock);
-	list_for_each_entry(udc, &udc_list, list) {
-		ret = strcmp(name, dev_name(&udc->dev));
-		if (!ret)
-			break;
-	}
-	if (ret) {
-		ret = -ENODEV;
-		goto out;
-	}
-	if (udc->driver) {
-		ret = -EBUSY;
-		goto out;
-	}
-	ret = udc_bind_to_driver(udc, driver);
-out:
-	mutex_unlock(&udc_lock);
-	return ret;
-}
 
 int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 {
@@ -454,110 +414,3 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 }
 
 /* ------------------------------------------------------------------------- */
-
-static ssize_t usb_udc_srp_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t n)
-{
-	struct usb_udc		*udc = container_of(dev, struct usb_udc, dev);
-
-	if (sysfs_streq(buf, "1"))
-		usb_gadget_wakeup(udc->gadget);
-
-	return n;
-}
-static DEVICE_ATTR(srp, S_IWUSR, NULL, usb_udc_srp_store);
-
-static ssize_t usb_udc_softconn_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t n)
-{
-	struct usb_udc		*udc = container_of(dev, struct usb_udc, dev);
-
-	if (!udc->driver) {
-		dev_err(dev, "soft-connect without a gadget driver\n");
-		return -EOPNOTSUPP;
-	}
-
-	if (sysfs_streq(buf, "connect")) {
-		usb_gadget_udc_start(udc);
-		usb_gadget_connect(udc->gadget);
-	} else if (sysfs_streq(buf, "disconnect")) {
-		usb_gadget_disconnect(udc->gadget);
-		udc->driver->disconnect(udc->gadget);
-		usb_gadget_udc_stop(udc);
-	} else {
-		dev_err(dev, "unsupported command '%s'\n", buf);
-		return -EINVAL;
-	}
-
-	return n;
-}
-static DEVICE_ATTR(soft_connect, S_IWUSR, NULL, usb_udc_softconn_store);
-
-static ssize_t state_show(struct device *dev, struct device_attribute *attr,
-			  char *buf)
-{
-	struct usb_udc		*udc = container_of(dev, struct usb_udc, dev);
-	struct usb_gadget	*gadget = udc->gadget;
-
-	return sprintf(buf, "%s\n", usb_state_string(gadget->state));
-}
-static DEVICE_ATTR_RO(state);
-
-#define USB_UDC_SPEED_ATTR(name, param)					\
-ssize_t name##_show(struct device *dev,					\
-		struct device_attribute *attr, char *buf)		\
-{									\
-	struct usb_udc *udc = container_of(dev, struct usb_udc, dev);	\
-	return snprintf(buf, PAGE_SIZE, "%s\n",				\
-			usb_speed_string(udc->gadget->param));		\
-}									\
-static DEVICE_ATTR_RO(name)
-
-static USB_UDC_SPEED_ATTR(current_speed, speed);
-static USB_UDC_SPEED_ATTR(maximum_speed, max_speed);
-
-#define USB_UDC_ATTR(name)					\
-ssize_t name##_show(struct device *dev,				\
-		struct device_attribute *attr, char *buf)	\
-{								\
-	struct usb_udc		*udc = container_of(dev, struct usb_udc, dev); \
-	struct usb_gadget	*gadget = udc->gadget;		\
-								\
-	return snprintf(buf, PAGE_SIZE, "%d\n", gadget->name);	\
-}								\
-static DEVICE_ATTR_RO(name)
-
-static USB_UDC_ATTR(is_otg);
-static USB_UDC_ATTR(is_a_peripheral);
-static USB_UDC_ATTR(b_hnp_enable);
-static USB_UDC_ATTR(a_hnp_support);
-static USB_UDC_ATTR(a_alt_hnp_support);
-static USB_UDC_ATTR(is_selfpowered);
-
-static struct attribute *usb_udc_attrs[] = {
-	&dev_attr_srp.attr,
-	&dev_attr_soft_connect.attr,
-	&dev_attr_state.attr,
-	&dev_attr_current_speed.attr,
-	&dev_attr_maximum_speed.attr,
-
-	&dev_attr_is_otg.attr,
-	&dev_attr_is_a_peripheral.attr,
-	&dev_attr_b_hnp_enable.attr,
-	&dev_attr_a_hnp_support.attr,
-	&dev_attr_a_alt_hnp_support.attr,
-	&dev_attr_is_selfpowered.attr,
-	NULL,
-};
-
-static const struct attribute_group usb_udc_attr_group = {
-	.attrs = usb_udc_attrs,
-};
-
-static const struct attribute_group *usb_udc_attr_groups[] = {
-	&usb_udc_attr_group,
-	NULL,
-};
-
-
-

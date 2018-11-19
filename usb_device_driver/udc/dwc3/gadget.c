@@ -16,9 +16,9 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/pm_runtime.h>
-#include <linux/interrupt.h>
-#include <linux/list.h>
+
+#include "interrupt.h"
+#include "list.h"
 
 
 #include <ch9.h>
@@ -589,6 +589,8 @@ static int __dwc3_gadget_ep_enable(struct dwc3_ep *dep,
 		/* Initialize the TRB ring */
 		dep->trb_dequeue = 0;
 		dep->trb_enqueue = 0;
+
+		/* ep trb alloc */
 		memset(dep->trb_pool, 0,
 		       sizeof(struct dwc3_trb) * DWC3_TRB_NUM);   /*cyl ?  */
 
@@ -617,7 +619,7 @@ static int __dwc3_gadget_ep_enable(struct dwc3_ep *dep,
 		strlcat(dep->name, "-int", sizeof(dep->name));
 		break;
 	default:
-		dev_err(dwc->dev, "invalid endpoint transfer type\n");
+		dev_err("invalid endpoint transfer type\n");
 	}
 
 	return 0;
@@ -1538,7 +1540,8 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 	 * is still in process, complete it and get the core into setup phase.
 	 */
 	if (!is_on && dwc->ep0state != EP0_SETUP_PHASE) {
-		reinit_completion(&dwc->ep0_in_setup);
+		//reinit_completion(&dwc->ep0_in_setup);
+		/* clear event */
 		return -EBUSY;
 	}
 
@@ -1611,19 +1614,24 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 	struct dwc3		*dwc = gadget_to_dwc(g);
 	unsigned long		flags;
 	int			ret;
+	u32 timeout = 500; /* time out ms?*/
+	u32 event_flag;
 
 	is_on = !!is_on;
 
 try_again:
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	ret = dwc3_gadget_run_stop(dwc, is_on, false);
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	if (ret == -EBUSY) {
-		ret = wait_for_completion_timeout(&dwc->ep0_in_setup,
-						  msecs_to_jiffies(500));
-		if (ret == 0) {
-			dev_err(dwc->dev, "timeout to stop gadget.\n");
+		ret = SCI_GetEvent((SCI_EVENT_GROUP_PTR)dwc->ep0_in_setup,
+					event_num, SCI_OR_CLEAR, &event_flag, timeout);
+			
+		//ret = wait_for_completion_timeout(&dwc->ep0_in_setup,
+						  //msecs_to_jiffies(500));
+		if (ret != 0) {
+			dev_err("timeout to stop gadget.\n");
 			ret = -ETIMEDOUT;
 		} else {
 			goto try_again;
@@ -1763,21 +1771,16 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 	if (dwc->dr_mode == USB_DR_MODE_PERIPHERAL)
 		dwc3_core_generic_reset(dwc);
 
-#if 0 
-	irq = platform_get_irq(to_platform_device(dwc->dev), 0);
-	ret = request_threaded_irq(irq, dwc3_interrupt, dwc3_thread_interrupt,
-			IRQF_SHARED, "dwc3", dwc);
-#else
-	irq = USB_INT_NUM;
-	ISR_RegHander(irq, dwc3_interrupt);
-	Hisr_RegHander(irq, dwc3_thread_interrupt);
-#endif
+
+	dwc->irq_gadget = USB_INT_NUM;
+	ISR_RegHander(dwc->irq_gadget, dwc3_interrupt);
+	Hisr_RegHander(dwc->irq_gadget, dwc3_thread_interrupt);
+	
 	if (ret) {
-		dev_err(dwc->dev, "failed to request irq #%d --> %d\n",
+		dev_err("failed to request irq #%d --> %d\n",
 				irq, ret);
 		goto err0;
 	}
-	dwc->irq_gadget = irq;
 
 	//spin_lock_irqsave(&dwc->lock, flags);
 
@@ -1808,7 +1811,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 err1:
 	//spin_unlock_irqrestore(&dwc->lock, flags);
-	free_irq(irq, dwc);
+	ISR_UnRegHander(dwc->irq_gadget);
 err0:
 	return ret;
 }
@@ -1852,7 +1855,9 @@ check_next:
 			continue;
 
 		if (dep->flags & DWC3_EP_CMDCMPLT_BUSY) {
-			reinit_completion(&dwc->cmd_complete);
+			
+			//reinit_completion(&dwc->cmd_complete);
+			/*clear event*/
 			epstart = epnum + 1;
 			wait_cmd_complete = 1;
 			break;
@@ -1865,11 +1870,12 @@ check_next:
 	 */
 	if (wait_cmd_complete) {
 		wait_cmd_complete = 0;
-		ret = wait_for_completion_timeout(&dwc->cmd_complete,
-						  msecs_to_jiffies(100));
+		ret = SCI_GetEvent((SCI_EVENT_GROUP_PTR)dwc->cmd_complete,
+					event_num, SCI_OR_CLEAR, &event_flag, 500);
+		//ret = wait_for_completion_timeout(&dwc->cmd_complete,
+						  //msecs_to_jiffies(100));
 		if (ret == 0)
-			dev_warn(dwc->dev,
-				 "timeout to wait for command complete.\n");
+			dev_warn("timeout to wait for command complete.\n");
 
 		goto check_next;
 	}
@@ -1899,7 +1905,7 @@ static int dwc3_gadget_stop(struct usb_gadget *g)
 	 */
 	dwc3_wait_command_complete(dwc);
 
-	free_irq(dwc->irq_gadget, dwc);
+	ISR_UnRegHander(dwc->irq_gadget);
 
 	return 0;
 }
@@ -2346,7 +2352,9 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 	case DWC3_DEPEVT_EPCMDCMPLT:
 		if (dep->flags & DWC3_EP_CMDCMPLT_BUSY) {
 			dep->flags &= ~DWC3_EP_CMDCMPLT_BUSY;
-			complete(&dwc->cmd_complete);
+			//complete(&dwc->cmd_complete);
+			type = EP0_IN_SETUP;
+			SCI_SetEvent(dwc->cmd_complete, type, SCI_OR);
 		}
 
 		dwc3_trace(trace_dwc3_gadget, "Endpoint Command Complete");
@@ -3067,7 +3075,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 	dwc->ctrl_req = usb_dma_malloc(sizeof(*dwc->ctrl_req),
 		&dwc->ctrl_req_addr);
 	if (!dwc->ctrl_req) {
-		dev_err(dwc->dev, "failed to allocate ctrl request\n");
+		dev_err("failed to allocate ctrl request\n");
 		ret = -ENOMEM;
 		goto err0;
 	}
@@ -3078,7 +3086,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 		&dwc->ep0_trb_addr);
 
 	if (!dwc->ep0_trb) {
-		dev_err(dwc->dev, "failed to allocate ep0 trb\n");
+		dev_err("failed to allocate ep0 trb\n");
 		ret = -ENOMEM;
 		goto err1;
 	}
@@ -3093,13 +3101,15 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 	dwc->ep0_bounce = usb_dma_malloc(
 			DWC3_EP0_BOUNCE_SIZE, &dwc->ep0_bounce_addr);
 	if (!dwc->ep0_bounce) {
-		dev_err(dwc->dev, "failed to allocate ep0 bounce buffer\n");
+		dev_err("failed to allocate ep0 bounce buffer\n");
 		ret = -ENOMEM;
 		goto err3;
 	}
 
-	init_completion(&dwc->ep0_in_setup);
-	init_completion(&dwc->cmd_complete);
+	//init_completion(&dwc->ep0_in_setup);
+	//init_completion(&dwc->cmd_complete);
+	dwc->ep0_in_setup = SCI_CreateEvent("ep0_in_setup");
+	dwc->cmd_complete = SCI_CreateEvent("cmd_complete");
 
 	dwc->gadget.ops			= &dwc3_gadget_ops;
 	dwc->gadget.speed		= USB_SPEED_UNKNOWN;
@@ -3146,7 +3156,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 
 	ret = usb_add_gadget_udc(&dwc->gadget);
 	if (ret) {
-		dev_err(dwc->dev, "failed to register udc\n");
+		dev_err("failed to register udc\n");
 		goto err4;
 	}
 

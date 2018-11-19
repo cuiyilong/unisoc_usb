@@ -19,10 +19,16 @@
 #ifndef __DRIVERS_USB_DWC3_IO_H
 #define __DRIVERS_USB_DWC3_IO_H
 
-#include <linux/io.h>
 #include "trace.h"
 #include "debug.h"
 #include "core.h"
+
+#define readl(a) (*((uint32*)(a)))
+#define writel(value, addr) \
+do \ 
+{ \
+	*(volatile uint32 *)addr = value;\
+}while(0)
 
 static inline u32 dwc3_readl(void __iomem *base, u32 offset)
 {
@@ -41,7 +47,7 @@ static inline u32 dwc3_readl(void __iomem *base, u32 offset)
 	 * documentation, so we revert it back to the proper addresses, the
 	 * same way they are described on SNPS documentation
 	 */
-	dwc3_trace(trace_dwc3_readl, "addr %p value %08x",
+	dwc3_trace("read:addr %p value %08x",
 			base - DWC3_GLOBALS_REGS_START + offset, value);
 
 	return value;
@@ -63,7 +69,7 @@ static inline void dwc3_writel(void __iomem *base, u32 offset, u32 value)
 	 * documentation, so we revert it back to the proper addresses, the
 	 * same way they are described on SNPS documentation
 	 */
-	dwc3_trace(trace_dwc3_writel, "addr %p value %08x",
+	dwc3_trace("write: addr %p value %08x",
 			base - DWC3_GLOBALS_REGS_START + offset, value);
 }
 
