@@ -24,8 +24,7 @@
 #include "gadget.h"
 
 #include "core.h"
-#include "gadget.h"
-#include "io.h"
+#include "dwc3_gadget.h"
 
 #include "debug.h"
 

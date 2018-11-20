@@ -25,8 +25,8 @@
 
 #include "core.h"
 #include "debug.h"
-#include "gadget.h"
-#include "io.h"
+#include "dwc3_gadget.h"
+
 
 static void __dwc3_ep0_do_control_status(struct dwc3 *dwc, struct dwc3_ep *dep);
 static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,

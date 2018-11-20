@@ -21,6 +21,7 @@
 
 #include "list.h"
 #include "gadget.h"
+#include "core.h"
 
 
 
