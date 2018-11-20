@@ -17,6 +17,27 @@
 
 #include "debug.h"
 
+void trace_dwc3_ep0(struct va_format *vaf)
+{
+	return;
+}
+
+void trace_dwc3_gadget(struct va_format *vaf)
+{
+	return;
+}
+
+void trace_dwc3_readl(struct va_format *vaf)
+{
+	return;
+}
+
+void trace_dwc3_writel(struct va_format *vaf)
+{
+	return;
+}
+
+
 void dwc3_trace(void (*trace)(struct va_format *), const char *fmt, ...)
 {
 	struct va_format vaf;

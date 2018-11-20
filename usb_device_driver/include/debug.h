@@ -27,7 +27,6 @@ static inline bool __must_check IS_ERR_OR_NULL(__force const void *ptr)
 #define dev_dbg(format, ...) SCI_TRACE_LOW("dev dbg:"format, ...)
 #define dev_info(format, ...) SCI_TRACE_LOW("dev info:"format, ...)
 #define dev_warn(format, ...) SCI_TRACE_LOW("dev arn:"format, ...)
-#define dev_vdbg(format, ...) SCI_TRACE_LOW("dev vdbg:"format, ...)
 
 
 

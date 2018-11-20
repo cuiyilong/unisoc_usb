@@ -537,8 +537,6 @@ void usb_remove_function(struct usb_configuration *c, struct usb_function *f);
 /* messaging utils */
 #define DBG(fmt, args...) \
 	dev_dbg(fmt , ## args)
-#define VDBG(fmt, args...) \
-	dev_vdbg(fmt , ## args)
 #define ERROR(fmt, args...) \
 	dev_err(fmt , ## args)
 #define WARNING(fmt, args...) \

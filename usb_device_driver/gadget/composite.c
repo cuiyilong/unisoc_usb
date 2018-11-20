@@ -13,7 +13,7 @@
 
 
 
-#include "composite.h>"
+#include "composite.h"
 #include "u_os_desc.h"
 
 /**
@@ -1269,7 +1269,7 @@ static void composite_setup_complete(struct usb_ep *ep, struct usb_request *req)
 	else if (cdev->os_desc_req == req)
 		cdev->os_desc_pending = false;
 	else
-		WARN(1, "unknown request %p\n", req);
+		WARNING("unknown request %p\n", req);
 }
 
 static int composite_ep0_queue(struct usb_composite_dev *cdev,
@@ -1284,7 +1284,7 @@ static int composite_ep0_queue(struct usb_composite_dev *cdev,
 		else if (cdev->os_desc_req == req)
 			cdev->os_desc_pending = true;
 		else
-			WARN(1, "unknown request %p\n", req);
+			WARNING("unknown request %p\n", req);
 	}
 
 	return ret;
@@ -1310,7 +1310,7 @@ static int count_ext_compat(struct usb_configuration *c)
 				++res;
 		}
 	}
-	BUG_ON(res > 255);
+	SCI_ASSERT(res > 255);
 	return res;
 }
 
@@ -1875,7 +1875,7 @@ try_fun_setup:
 			composite_setup_complete(gadget->ep0, req);
 		}
 	} else if (value == USB_GADGET_DELAYED_STATUS && w_length != 0) {
-		WARN(cdev,
+		WARNING(
 			"%s: Delayed status not supported for w_length != 0",
 			__func__);
 	}
@@ -1891,7 +1891,7 @@ void composite_disconnect(struct usb_gadget *gadget)
 	unsigned long			flags;
 
 	if (cdev == NULL) {
-		WARN(1, "%s: Calling disconnect on a Gadget that is \
+		WARNING("%s: Calling disconnect on a Gadget that is \
 			 not connected\n", __func__);
 		return;
 	}
@@ -2254,7 +2254,7 @@ void usb_composite_setup_continue(struct usb_composite_dev *cdev)
 	//spin_lock_irqsave(&cdev->lock, flags);
 
 	if (cdev->delayed_status == 0) {
-		WARN(cdev, "%s: Unexpected call\n", __func__);
+		WARNING("%s: Unexpected call\n", __func__);
 
 	} else if (--cdev->delayed_status == 0) {
 		DBG("%s: Completing delayed status\n", __func__);

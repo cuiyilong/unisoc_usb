@@ -771,6 +771,7 @@ struct dwc3 {
 
 	/* device lock */
 	//spinlock_t		lock;
+	SCI_MUTEX_PTR	lock;
 
 	//struct device		*dev;
 

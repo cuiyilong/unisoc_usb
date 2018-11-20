@@ -833,15 +833,15 @@ static struct usb_function *wcn_func_alloc(const char * name)
 
 static struct usb_function_driver wcn_usb_func[MAX_U_WCN_INTERFACES] = {
 	{
-	.name = __stringify("wcn_bt0"),
+	.name = "wcn_bt0",
 	.alloc_func = wcn_func_alloc,
 	},
 	{
-	.name = __stringify("wcn_bt1"),
+	.name = "wcn_bt1",
 	.alloc_func = wcn_func_alloc,
 	},
 	{
-	.name = __stringify("wcn_wifi"),
+	.name = "wcn_wifi",
 	.alloc_func = wcn_func_alloc,
 	},
 };	

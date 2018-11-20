@@ -89,7 +89,7 @@ static int dwc3_ep0_start_trans(struct dwc3 *dwc, u8 epnum, dma_addr_t buf_dma,
 	params.param0 = upper_32_bits(dwc->ep0_trb_addr);
 	params.param1 = lower_32_bits(dwc->ep0_trb_addr);
 
-	trace_dwc3_prepare_trb(dep, trb);
+	//trace_dwc3_prepare_trb(dep, trb);
 
 	ret = dwc3_send_gadget_ep_cmd(dwc, dep->number,
 			DWC3_DEPCMD_STARTTRANSFER, &params);
@@ -663,7 +663,7 @@ static int dwc3_ep0_set_sel(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 	wLength = le16_to_cpu(ctrl->wLength);
 
 	if (wLength != 6) {
-		dev_err(dwc->dev, "Set SEL should be 6 bytes, got %d\n",
+		dev_err("Set SEL should be 6 bytes, got %d\n",
 				wLength);
 		return -EINVAL;
 	}
@@ -953,7 +953,7 @@ static void dwc3_ep0_xfer_complete(struct dwc3 *dwc,
 		dwc3_ep0_complete_status(dwc, event);
 		break;
 	default:
-		WARN(true, "UNKNOWN ep0state %d\n", dwc->ep0state);
+		WARNING("UNKNOWN ep0state %d\n", dwc->ep0state);
 	}
 }
 
@@ -976,7 +976,7 @@ static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
 		ret = usb_gadget_map_request(&dwc->gadget, &req->request,
 				dep->number);
 		if (ret) {
-			dev_dbg(dwc->dev, "failed to map request\n");
+			dev_dbg("failed to map request\n");
 			return;
 		}
 
@@ -1004,7 +1004,7 @@ static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
 		ret = usb_gadget_map_request(&dwc->gadget, &req->request,
 				dep->number);
 		if (ret) {
-			dev_dbg(dwc->dev, "failed to map request\n");
+			dev_dbg("failed to map request\n");
 			return;
 		}
 

@@ -8,6 +8,17 @@
 #define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
 #include <asm/types.h>
 
+typedef signed char __s8;
+typedef unsigned char __u8;
+
+typedef signed short __s16;
+typedef unsigned short __u16;
+
+typedef signed int __s32;
+typedef unsigned int __u32;
+
+typedef signed long __s64;
+typedef unsigned long __u64;
 
 
 /*
@@ -136,5 +147,11 @@ typedef u32 dma_addr_t;
 #define	EOPNOTSUPP	45	/* Operation not supported on transport endpoint */
 #define	ESHUTDOWN	58	/* No send after transport endpoint shutdown */
 #define	ETIMEDOUT	60	/* timed out */
+
+
+enum {
+	false	= 0,
+	true	= 1
+};
 
 #endif /* _TOOLS_LINUX_TYPES_H_ */

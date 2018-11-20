@@ -256,7 +256,7 @@ int dwc3_event_buffers_setup(struct dwc3 *dwc)
 
 	for (n = 0; n < dwc->num_event_buffers; n++) {
 		evt = dwc->ev_buffs[n];
-		dev_dbg(dwc->dev, "Event buf %p dma %08llx length %d\n",
+		dev_dbg("Event buf %p dma %08llx length %d\n",
 				evt->buf, (unsigned long long) evt->dma,
 				evt->length);
 
@@ -328,7 +328,7 @@ static int dwc3_setup_scratch_buffers(struct dwc3 *dwc)
 			dwc->nr_scratch * DWC3_SCRATCHBUF_SIZE,
 			DMA_BIDIRECTIONAL);
 	if (dma_mapping_error(dwc->dev, scratch_addr)) {
-		dev_err(dwc->dev, "failed to map scratch buffer\n");
+		dev_err("failed to map scratch buffer\n");
 		ret = -EFAULT;
 		goto err0;
 	}
@@ -383,7 +383,7 @@ static void dwc3_core_num_eps(struct dwc3 *dwc)
 	dwc->num_in_eps = DWC3_NUM_IN_EPS(parms);
 	dwc->num_out_eps = DWC3_NUM_EPS(parms) - dwc->num_in_eps;
 
-	dwc3_trace(trace_dwc3_core, "found %d IN and %d OUT endpoints",
+	dev_info("found %d IN and %d OUT endpoints",
 			dwc->num_in_eps, dwc->num_out_eps);
 }
 
@@ -693,7 +693,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 
 	ret = dwc3_event_buffers_setup(dwc);
 	if (ret) {
-		dev_err(dwc->dev, "failed to setup event buffers\n");
+		dev_err("failed to setup event buffers\n");
 		goto err4;
 	}
 
@@ -708,7 +708,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		dwc3_set_mode(dwc, DWC3_GCTL_PRTCAP_OTG);
 		break;
 	default:
-		dev_warn(dwc->dev, "Unsupported mode %d\n", dwc->dr_mode);
+		dev_warn("Unsupported mode %d\n", dwc->dr_mode);
 		break;
 	}
 
@@ -786,7 +786,7 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 		} else if (ret == -EPROBE_DEFER) {
 			return ret;
 		} else {
-			dev_err(dev, "no usb2 phy configured\n");
+			dev_err("no usb2 phy configured\n");
 			return ret;
 		}
 	}
@@ -799,7 +799,7 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 		} else if (ret == -EPROBE_DEFER) {
 			return ret;
 		} else {
-			dev_err(dev, "no usb3 phy configured\n");
+			dev_err("no usb3 phy configured\n");
 			return ret;
 		}
 	}
@@ -1039,7 +1039,6 @@ static int dwc3_remove(void)
 	dwc3_core_exit_mode(dwc);
 
 	dwc3_core_exit(dwc);
-	dwc3_ulpi_exit(dwc);
 
 	//pm_runtime_put_sync(&pdev->dev);
 	//pm_runtime_disable(&pdev->dev);

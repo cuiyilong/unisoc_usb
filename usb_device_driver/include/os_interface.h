@@ -14,3 +14,20 @@ enum irqreturn {
 };
 typedef enum irqreturn irqreturn_t;
 #define IRQ_RETVAL(x)	((x) ? IRQ_HANDLED : IRQ_NONE)
+
+
+
+static void inline mutex_lock(SCI_MUTEX_PTR mutex)
+{
+	if(SCI_InThreadContext() && mutex)
+		SCI_GetMutex(mutex, SCI_WAIT_FOREVER)
+}
+
+static void inline mutex_unlock(SCI_MUTEX_PTR mutex)
+{
+	if(SCI_InThreadContext() && mutex)
+		SCI_PutMutex(mutex)
+}
+
+
+

@@ -47,7 +47,7 @@ static inline u32 dwc3_readl(void __iomem *base, u32 offset)
 	 * documentation, so we revert it back to the proper addresses, the
 	 * same way they are described on SNPS documentation
 	 */
-	dwc3_trace("read:addr %p value %08x",
+	dwc3_trace(trace_dwc3_readl, "read:addr %p value %08x",
 			base - DWC3_GLOBALS_REGS_START + offset, value);
 
 	return value;
@@ -69,7 +69,7 @@ static inline void dwc3_writel(void __iomem *base, u32 offset, u32 value)
 	 * documentation, so we revert it back to the proper addresses, the
 	 * same way they are described on SNPS documentation
 	 */
-	dwc3_trace("write: addr %p value %08x",
+	dwc3_trace(trace_dwc3_writel, "write: addr %p value %08x",
 			base - DWC3_GLOBALS_REGS_START + offset, value);
 }
 
