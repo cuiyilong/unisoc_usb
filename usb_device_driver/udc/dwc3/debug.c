@@ -17,6 +17,21 @@
 
 #include "debug.h"
 
+
+void trace_dwc3_prepare_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+{
+	return 0;
+}
+
+void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+{
+	return 0;
+}
+
+void trace_dwc3_ctrl_req(struct usb_ctrlrequest *ctrl)
+{
+	return;
+}
 void trace_dwc3_ep0(struct va_format *vaf)
 {
 	return;

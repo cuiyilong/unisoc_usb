@@ -470,6 +470,7 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
 			if (!(reg & DWC3_GUSB2PHYCFG_ULPI_UTMI))
 				break;
 		}
+	#if 0
 		/* FALLTHROUGH */
 	case DWC3_GHWPARAMS3_HSPHY_IFC_ULPI:   /*  marlin3e not use */
 		/* Making sure the interface and PHY are operational */
@@ -483,6 +484,7 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
 		if (ret)
 			return ret;
 		/* FALLTHROUGH */
+	#endif
 	default:
 		break;
 	}
@@ -970,7 +972,8 @@ static int dwc3_probe(void)
 	if (ret)
 		goto err0;
 
-	//spin_lock_init(&dwc->lock);
+	//spin_lock_init(dwc->lock);
+	mutex_lock_init(dwc->lock);
 
 	#if 0
 	if (!dev->dma_mask) {

@@ -29,5 +29,7 @@ static inline bool __must_check IS_ERR_OR_NULL(__force const void *ptr)
 #define dev_warn(format, ...) SCI_TRACE_LOW("dev arn:"format, ...)
 
 
+#define WARN_ON(x) 
+#define WARN_ON_ONCE(x)
 
 #endif

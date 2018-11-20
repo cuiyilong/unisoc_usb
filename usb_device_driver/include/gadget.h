@@ -15,16 +15,9 @@
 #ifndef __USB_GADGET_H
 #define __USB_GADGET_H
 
-#include <linux/device.h>
-#include <linux/errno.h>
-#include <linux/init.h>
-#include <linux/list.h>
-#include <linux/slab.h>
-#include <linux/scatterlist.h>
-#include <linux/types.h>
-#include <linux/workqueue.h>
-#include <linux/usb/ch9.h>
-#include <linux/usb/charger.h>
+
+#include <ch9.h>
+
 
 struct usb_ep;
 
@@ -140,12 +133,10 @@ struct usb_ep_ops {
 		const struct usb_endpoint_descriptor *desc);
 	int (*disable) (struct usb_ep *ep);
 
-	struct usb_request *(*alloc_request) (struct usb_ep *ep,
-		gfp_t gfp_flags);
+	struct usb_request *(*alloc_request) (struct usb_ep *ep);
 	void (*free_request) (struct usb_ep *ep, struct usb_request *req);
 
-	int (*queue) (struct usb_ep *ep, struct usb_request *req,
-		gfp_t gfp_flags);
+	int (*queue) (struct usb_ep *ep, struct usb_request *req);
 	int (*dequeue) (struct usb_ep *ep, struct usb_request *req);
 
 	int (*set_halt) (struct usb_ep *ep, int value);
@@ -643,11 +634,12 @@ struct usb_gadget {
 	enum usb_device_state		state;
 	const char			*name;
 	//struct device			dev;
+	void *			driver_data;
 	unsigned			out_epnum;
 	unsigned			in_epnum;
-	struct usb_otg_caps		*otg_caps;
+	//struct usb_otg_caps		*otg_caps;
 	/* negotiate the power with the usb charger */
-	struct usb_charger		*charger;
+	//struct usb_charger		*charger;
 
 	unsigned			sg_supported:1;
 	unsigned			is_otg:1;
@@ -666,9 +658,9 @@ struct usb_gadget {
 #define work_to_gadget(w)	(container_of((w), struct usb_gadget, work))
 
 static inline void set_gadget_data(struct usb_gadget *gadget, void *data)
-	{ dev_set_drvdata(&gadget->dev, data); }
+	{ gadget->driver_data = data); }
 static inline void *get_gadget_data(struct usb_gadget *gadget)
-	{ return dev_get_drvdata(&gadget->dev); }
+	{ return gadget->driver_data; }
 static inline struct usb_gadget *dev_to_usb_gadget(struct device *dev)
 {
 	return container_of(dev, struct usb_gadget, dev);

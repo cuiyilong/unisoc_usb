@@ -83,6 +83,8 @@ struct hlist_node {
 	struct hlist_node *next, **pprev;
 };
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 
 /**
  * upper_32_bits - return bits 32-63 of a number
@@ -144,7 +146,9 @@ typedef u32 dma_addr_t;
 #define	EDOM		33	/* Math argument out of domain of func */
 #define	ERANGE		34	/* Math result not representable */
 
+#define	EINPROGRESS 36	/* Operation now in progress */
 #define	EOPNOTSUPP	45	/* Operation not supported on transport endpoint */
+#define	ECONNRESET	54	/* Connection reset by peer */
 #define	ESHUTDOWN	58	/* No send after transport endpoint shutdown */
 #define	ETIMEDOUT	60	/* timed out */
 

@@ -38,8 +38,6 @@
 struct usb_udc {
 	struct usb_gadget_driver	*driver;
 	struct usb_gadget		*gadget;
-	//struct device			dev;
-	//struct list_head		list;
 	bool				vbus;
 };
 
@@ -296,10 +294,6 @@ static inline void usb_gadget_udc_stop(struct usb_udc *udc)
 {
 	udc->gadget->ops->udc_stop(udc->gadget);
 }
-
-
-
-static const struct attribute_group *usb_udc_attr_groups[];
 
 
 /**

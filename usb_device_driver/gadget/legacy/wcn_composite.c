@@ -139,7 +139,7 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 	status = strings_dev[STRING_DESCRIPTION_IDX].id;
 	wcn_comp_config_driver.iConfiguration = status;
 
-#ifdef OTG
+#ifdef USB_OTG
 	if (gadget_is_otg(cdev->gadget)) {
 		if (!otg_desc[0]) {
 			struct usb_descriptor_header *usb_desc;

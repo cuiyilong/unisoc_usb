@@ -281,9 +281,11 @@ void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
 			req->request.length, status);
 	trace_dwc3_gadget_giveback(req);
 
-	spin_unlock(&dwc->lock);
+	//spin_unlock(&dwc->lock);
+	mutex_unlock(dwc->lock);
 	usb_gadget_giveback_request(&dep->endpoint, &req->request);
-	spin_lock(&dwc->lock);
+	//spin_lock(&dwc->lock);
+	mutex_lock(dwc->lock);
 }
 
 int dwc3_send_gadget_generic_command(struct dwc3 *dwc, unsigned cmd, u32 param)
@@ -1960,7 +1962,6 @@ static int dwc3_gadget_init_hw_endpoints(struct dwc3 *dwc,
 	for (i = 0; i < num; i++) {
 		u8 epnum = (i << 1) | (!!direction);
 
-		//dep = kzalloc(sizeof(*dep), GFP_KERNEL);
 		dep = usb_malloc(sizeof(*dep));
 		if (!dep)
 			return -ENOMEM;
@@ -2365,27 +2366,33 @@ static void dwc3_endpoint_interrupt(struct dwc3 *dwc,
 static void dwc3_disconnect_gadget(struct dwc3 *dwc)
 {
 	if (dwc->gadget_driver && dwc->gadget_driver->disconnect) {
-		spin_unlock(&dwc->lock);
+		//spin_unlock(&dwc->lock);
+		mutex_unlock(dwc->lock);
 		dwc->gadget_driver->disconnect(&dwc->gadget);
-		spin_lock(&dwc->lock);
+		//spin_lock(&dwc->lock);
+		mutex_lock(dwc->lock);
 	}
 }
 
 static void dwc3_suspend_gadget(struct dwc3 *dwc)
 {
 	if (dwc->gadget_driver && dwc->gadget_driver->suspend) {
-		spin_unlock(&dwc->lock);
+		//spin_unlock(&dwc->lock);
+		mutex_unlock(dwc->lock);
 		dwc->gadget_driver->suspend(&dwc->gadget);
-		spin_lock(&dwc->lock);
+		//spin_lock(&dwc->lock);
+		mutex_lock(dwc->lock);
 	}
 }
 
 static void dwc3_resume_gadget(struct dwc3 *dwc)
 {
 	if (dwc->gadget_driver && dwc->gadget_driver->resume) {
-		spin_unlock(&dwc->lock);
+		//spin_unlock(&dwc->lock);
+		mutex_unlock(dwc->lock);
 		dwc->gadget_driver->resume(&dwc->gadget);
-		spin_lock(&dwc->lock);
+		//spin_lock(&dwc->lock);
+		mutex_lock(dwc->lock);
 	}
 }
 
@@ -2395,9 +2402,11 @@ static void dwc3_reset_gadget(struct dwc3 *dwc)
 		return;
 
 	if (dwc->gadget.speed != USB_SPEED_UNKNOWN) {
-		spin_unlock(&dwc->lock);
+		//spin_unlock(&dwc->lock);
+		mutex_unlock(dwc->lock);
 		usb_gadget_udc_reset(&dwc->gadget, dwc->gadget_driver);
-		spin_lock(&dwc->lock);
+		//spin_lock(&dwc->lock);
+		mutex_lock(dwc->lock);
 	}
 }
 
@@ -2973,7 +2982,7 @@ static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 	u32 count;
 	int i;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	if (dwc->gadget_suspend) {
 		for (i = 0; i < dwc->num_event_buffers; i++) {
 			count = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(i));
@@ -2988,7 +2997,7 @@ static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 		ret |= dwc3_process_event_buf(dwc, i);
 
 out:
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 	enable_irq(dwc->irq_gadget);
 	return ret;
 }
@@ -3000,13 +3009,14 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
 	u32 count;
 	u32 reg;
 
-	spin_lock(&dwc->lock);
+	//spin_lock(&dwc->lock);
+	mutex_lock(dwc->lock);
 	if (dwc->gadget_suspend) {
 		count = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(buf));
 		if (count)
 			dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(buf), count);
 
-		spin_unlock(&dwc->lock);
+		mutex_unlock(dwc->lock);
 		return IRQ_NONE;
 	}
 
@@ -3051,7 +3061,7 @@ static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
 		status = dwc3_check_event_buf(dwc, i);
 		if (status == IRQ_WAKE_THREAD) {
 			//disable_irq_nosync(dwc->irq_gadget);
-			disable_irq_nosync(dwc->irq_gadget);
+			disable_irq(dwc->irq_gadget);
 			dwc3_thread_interrupt(irq, _dwc);
 			ret = IRQ_HANDLED;
 		}
@@ -3070,8 +3080,6 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 {
 	int	ret;
 
-	//dwc->ctrl_req = dma_alloc_coherent(dwc->dev, sizeof(*dwc->ctrl_req),
-		//	&dwc->ctrl_req_addr, GFP_KERNEL);
 	dwc->ctrl_req = usb_dma_malloc(sizeof(*dwc->ctrl_req),
 		&dwc->ctrl_req_addr);
 	if (!dwc->ctrl_req) {
@@ -3080,8 +3088,6 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 		goto err0;
 	}
 
-	//dwc->ep0_trb = dma_alloc_coherent(dwc->dev, sizeof(*dwc->ep0_trb) * 2,
-		//	&dwc->ep0_trb_addr, GFP_KERNEL);
 	dwc->ep0_trb = usb_dma_malloc(sizeof(*dwc->ep0_trb) * 2,
 		&dwc->ep0_trb_addr);
 
@@ -3091,7 +3097,6 @@ int dwc3_gadget_init(struct dwc3 *dwc)
 		goto err1;
 	}
 
-	//dwc->setup_buf = kzalloc(DWC3_EP0_BOUNCE_SIZE, GFP_KERNEL);
 	dwc->setup_buf = usb_malloc(DWC3_EP0_BOUNCE_SIZE);
 	if (!dwc->setup_buf) {
 		ret = -ENOMEM;

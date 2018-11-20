@@ -1891,8 +1891,7 @@ void composite_disconnect(struct usb_gadget *gadget)
 	unsigned long			flags;
 
 	if (cdev == NULL) {
-		WARNING("%s: Calling disconnect on a Gadget that is \
-			 not connected\n", __func__);
+		WARNING("%s: Calling disconnect on a Gadget that is not connected\n", __func__);
 		return;
 	}
 

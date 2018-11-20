@@ -506,27 +506,12 @@ extern void composite_resume(struct usb_gadget *gadget);
 struct usb_function_driver {
 	const char *name;
 	struct list_head list;
-	//struct usb_function_instance *(*alloc_inst)(void);
 	struct usb_function *(*alloc_func)(const char *name);
-};
-
-struct usb_function_instance {
-	struct config_group group;
-	struct list_head cfs_list;
-	struct usb_function_driver *fd;
-	struct usb_function *f;
-	int (*set_inst_name)(struct usb_function_instance *inst,
-			      const char *name);
-	void (*free_func_inst)(struct usb_function_instance *inst);
 };
 
 void usb_function_unregister(struct usb_function_driver *f);
 int usb_function_register(struct usb_function_driver *newf);
-void usb_put_function_instance(struct usb_function_instance *fi);
 void usb_put_function(struct usb_function *f);
-struct usb_function_instance *usb_get_function_instance(const char *name);
-struct usb_function *usb_get_function(struct usb_function_instance *fi);
-
 struct usb_configuration *usb_get_config(struct usb_composite_dev *cdev,
 		int val);
 int usb_add_config_only(struct usb_composite_dev *cdev,

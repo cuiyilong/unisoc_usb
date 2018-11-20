@@ -2,8 +2,16 @@
 
 #include "composite.h"
 
-static LIST_HEAD(func_list);
-static DEFINE_MUTEX(func_lock);
+
+static struct list_head func_list;
+
+static SCI_MUTEX_PTR	func_lock;
+
+void function_init(void)
+{
+	func_lock = SCI_CreateMutex("func_mutex", SCI_INHERIT);
+	INIT_LIST_HEAD(&func_list);
+}
 
 static struct usb_function *get_usb_function(const char *name)
 {
@@ -11,13 +19,12 @@ static struct usb_function *get_usb_function(const char *name)
 	struct usb_function *f;
 
 	f = ERR_PTR(-ENOENT);
-	//mutex_lock(&func_lock);
+	mutex_lock(&func_lock);
 	list_for_each_entry(fd, &func_list, list) {
 
 		if (strcmp(name, fd->name))
 			continue;
-
-		
+	
 		f  = fd->alloc_func(name);
 		if (IS_ERR(f))
 			//module_put(fd->mod);
@@ -25,64 +32,10 @@ static struct usb_function *get_usb_function(const char *name)
 			f->fd = fd;
 		break;
 	}
-	//mutex_unlock(&func_lock);
+	mutex_unlock(&func_lock);
 	return f;
 }
 
-static struct usb_function_instance *try_get_usb_function_instance(const char *name)
-{
-	struct usb_function_driver *fd;
-
-	fi = ERR_PTR(-ENOENT);
-	//mutex_lock(&func_lock);
-	list_for_each_entry(fd, &func_list, list) {
-
-		if (strcmp(name, fd->name))
-			continue;
-
-		
-		fi = fd->alloc_inst();
-		if (IS_ERR(fi))
-			//module_put(fd->mod);
-		else
-			fi->fd = fd;
-		break;
-	}
-	//mutex_unlock(&func_lock);
-	return fi;
-}
-
-struct usb_function_instance *usb_get_function_instance(const char *name)
-{
-	struct usb_function_instance *fi;
-
-	fi = try_get_usb_function_instance(name);
-	if (!IS_ERR(fi))
-		return fi;
-}
-
-struct usb_function *usb_get_function(struct usb_function_instance *fi)
-{
-	struct usb_function *f;
-
-	f = fi->fd->alloc_func(fi);
-	if ((f == NULL) || IS_ERR(f))
-		return f;
-	f->fi = fi;
-	return f;
-}
-
-void usb_put_function_instance(struct usb_function_instance *fi)
-{
-	//struct module *mod;
-
-	if (!fi)
-		return;
-
-	//mod = fi->fd->mod;
-	fi->free_func_inst(fi);
-	//module_put(mod);
-}
 
 void usb_put_function(struct usb_function *f)
 {
@@ -99,7 +52,7 @@ int usb_function_register(struct usb_function_driver *newf)
 
 	ret = -EEXIST;
 
-	//mutex_lock(&func_lock);
+	mutex_lock(&func_lock);
 	list_for_each_entry(fd, &func_list, list) {
 		if (!strcmp(fd->name, newf->name))
 			goto out;
@@ -107,7 +60,7 @@ int usb_function_register(struct usb_function_driver *newf)
 	ret = 0;
 	list_add_tail(&newf->list, &func_list);
 out:
-	//mutex_unlock(&func_lock);
+	mutex_unlock(&func_lock);
 	return ret;
 }
 

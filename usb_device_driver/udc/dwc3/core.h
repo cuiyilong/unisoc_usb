@@ -19,20 +19,14 @@
 #ifndef __DRIVERS_USB_DWC3_CORE_H
 #define __DRIVERS_USB_DWC3_CORE_H
 
-#include <linux/device.h>
-#include <linux/spinlock.h>
-#include <linux/ioport.h>
-#include <linux/list.h>
-#include <linux/dma-mapping.h>
-#include <linux/mm.h>
-#include <linux/debugfs.h>
 
-#include <linux/usb/ch9.h>
-#include <linux/usb/gadget.h>
-#include <linux/usb/otg.h>
-#include <linux/ulpi/interface.h>
 
-#include <linux/phy/phy.h>
+#include "ch9.h"
+#include "gadget.h"
+#include "otg.h"
+
+
+#include "phy.h"
 
 #define DWC3_MSG_MAX	500
 

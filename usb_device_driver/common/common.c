@@ -22,16 +22,16 @@ int read_config_from_ini_string(char *item, const char **val);
 
 static inline bool read_config_from_ini_bool(const char *propname)
 {
-	
+	return true;
 }
 
 static inline int read_config_from_ini_u8(const char *propname, u8 *val)
 {
-
+	return true;
 }
 static inline int read_config_from_ini_u32(const char *propname, u32 *val)
 {
-
+	return true;
 }
 
 const char *usb_otg_state_string(enum usb_otg_state state)
@@ -80,7 +80,7 @@ enum usb_device_speed usb_get_maximum_speed(void)
 	int err;
 	int i;
 
-	err = read_config_from_ini("maximum-speed", &maximum_speed);
+	err = usb_otg_state_string("maximum-speed", &maximum_speed);
 	if (err < 0)
 		return USB_SPEED_UNKNOWN;
 
@@ -135,78 +135,4 @@ enum usb_dr_mode usb_get_dr_mode(void)
 
 	return USB_DR_MODE_UNKNOWN;
 }
-
-#ifdef CONFIG_OF
-/**
- * of_usb_host_tpl_support - to get if Targeted Peripheral List is supported
- * for given targeted hosts (non-PC hosts)
- * @np: Pointer to the given device_node
- *
- * The function gets if the targeted hosts support TPL or not
- */
-bool of_usb_host_tpl_support(struct device_node *np)
-{
-	if (of_find_property(np, "tpl-support", NULL))
-		return true;
-
-	return false;
-}
-
-/**
- * of_usb_update_otg_caps - to update usb otg capabilities according to
- * the passed properties in DT.
- * @np: Pointer to the given device_node
- * @otg_caps: Pointer to the target usb_otg_caps to be set
- *
- * The function updates the otg capabilities
- */
-int of_usb_update_otg_caps(struct device_node *np,
-			struct usb_otg_caps *otg_caps)
-{
-	u32 otg_rev;
-
-	if (!otg_caps)
-		return -EINVAL;
-
-	if (!of_property_read_u32(np, "otg-rev", &otg_rev)) {
-		switch (otg_rev) {
-		case 0x0100:
-		case 0x0120:
-		case 0x0130:
-		case 0x0200:
-			/* Choose the lesser one if it's already been set */
-			if (otg_caps->otg_rev)
-				otg_caps->otg_rev = min_t(u16, otg_rev,
-							otg_caps->otg_rev);
-			else
-				otg_caps->otg_rev = otg_rev;
-			break;
-		default:
-			pr_err("%s: unsupported otg-rev: 0x%x\n",
-						np->full_name, otg_rev);
-			return -EINVAL;
-		}
-	} else {
-		/*
-		 * otg-rev is mandatory for otg properties, if not passed
-		 * we set it to be 0 and assume it's a legacy otg device.
-		 * Non-dt platform can set it afterwards.
-		 */
-		otg_caps->otg_rev = 0;
-	}
-
-	if (of_find_property(np, "hnp-disable", NULL))
-		otg_caps->hnp_support = false;
-	if (of_find_property(np, "srp-disable", NULL))
-		otg_caps->srp_support = false;
-	if (of_find_property(np, "adp-disable", NULL) ||
-				(otg_caps->otg_rev < 0x0200))
-		otg_caps->adp_support = false;
-
-	return 0;
-}
-
-
-#endif
-
 

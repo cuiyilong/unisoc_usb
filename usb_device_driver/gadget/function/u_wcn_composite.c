@@ -283,11 +283,11 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	/* software-driven interface shutdown */
 	case -ECONNRESET:		/* unlink */
 	case -ESHUTDOWN:		/* disconnect etc */
-		VDBG(dev, "rx shutdown, code %d\n", status);
+		DBG("rx shutdown, code %d\n", status);
 
 	/* for hardware automagic (such as pxa) */
 	case -ECONNABORTED:		/* endpoint reset */
-		DBG(dev, "rx %s reset\n", ep->name);
+		DBG("rx %s reset\n", ep->name);
 
 		goto clean;
 
@@ -296,7 +296,7 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 		/* FALLTHROUGH */
 	default:
 
-		DBG(dev, "rx status %d\n", status);
+		DBG("rx status %d\n", status);
 		break;
 	}
 

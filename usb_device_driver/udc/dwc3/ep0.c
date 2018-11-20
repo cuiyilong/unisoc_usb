@@ -134,7 +134,7 @@ static int __dwc3_gadget_ep0_queue(struct dwc3_ep *dep,
 		direction = !!(dep->flags & DWC3_EP0_DIR_IN);
 
 		if (dwc->ep0state != EP0_DATA_PHASE) {
-			dev_WARN(dwc->dev, "Unexpected pending request\n");
+			dev_warn("Unexpected pending request\n");
 			return 0;
 		}
 
@@ -313,7 +313,7 @@ void dwc3_ep0_out_start(struct dwc3 *dwc)
 	ret = dwc3_ep0_start_trans(dwc, 0, dwc->ctrl_req_addr, 8,
 			DWC3_TRBCTL_CONTROL_SETUP, false);
 	if (ret < 0)
-		dev_warn(dwc->dev, "Enter control setup failed ret = %d", ret);
+		dev_warn("Enter control setup failed ret = %d", ret);
 
 	//complete(&dwc->ep0_in_setup);
 	type = EP0_IN_SETUP;
@@ -547,8 +547,10 @@ static int dwc3_ep0_delegate_req(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 	int ret;
 
 	//spin_unlock(&dwc->lock);
+	mutex_unlock(dwc->lock);
 	ret = dwc->gadget_driver->setup(&dwc->gadget, ctrl);
 	//spin_lock(&dwc->lock);
+	mutex_lock(dwc->lock);
 	return ret;
 }
 
@@ -760,7 +762,7 @@ static void dwc3_ep0_inspect_setup(struct dwc3 *dwc,
 		goto out;
 
 	if (dwc->pullups_connected == false) {
-		dev_warn(dwc->dev,
+		dev_warn(
 			 "DWC gadget is disconnected and ignore setup.\n");
 		goto out;
 	}
