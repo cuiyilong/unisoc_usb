@@ -9,10 +9,10 @@
  * (at your option) any later version.
  */
 
-#include <usb/ch9.h>
-#include <usb/gadget.h>
-#include <usb/composite.h>
-#include <usb/otg.h>
+#include "ch9.h"
+#include "gadget.h"
+#include "composite.h"
+#include "otg.h"
 
 /**
  * usb_descriptor_fillbuf - fill buffer with descriptors
@@ -188,7 +188,7 @@ void usb_free_all_descriptors(struct usb_function *f)
 	usb_free_descriptors(f->ss_descriptors);
 }
 
-
+#if USB_OTG
 struct usb_descriptor_header *usb_otg_descriptor_alloc(
 				struct usb_gadget *gadget)
 {
@@ -242,4 +242,4 @@ int usb_otg_descriptor_init(struct usb_gadget *gadget,
 
 	return 0;
 }
-
+#endif

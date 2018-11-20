@@ -10,9 +10,9 @@
  * compiled-in as well.  Otherwise, if either of the two stacks is
  * compiled as module, this file is compiled as module as well.
  */
-#include <usb/ch9.h>
-#include <usb/of.h>
-#include <usb/otg.h>
+#include "ch9.h"
+#include "otg.h"
+
 
 int read_config_from_ini_string(char *item, const char **val);
 {
@@ -33,7 +33,7 @@ static inline int read_config_from_ini_u32(const char *propname, u32 *val)
 {
 	return true;
 }
-
+#ifdef USB_OTG
 const char *usb_otg_state_string(enum usb_otg_state state)
 {
 	static const char *const names[] = {
@@ -57,7 +57,7 @@ const char *usb_otg_state_string(enum usb_otg_state state)
 
 	return names[state];
 }
-
+#endif
 static const char *const speed_names[] = {
 	[USB_SPEED_UNKNOWN] = "UNKNOWN",
 	[USB_SPEED_LOW] = "low-speed",

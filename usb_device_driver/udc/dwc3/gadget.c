@@ -22,12 +22,10 @@
 
 
 #include "ch9.h"
-#include "gadget.h>"
 
 #include "debug.h"
 #include "core.h"
-#include "gadget.h"
-#include "io.h"
+
 
 
 /**

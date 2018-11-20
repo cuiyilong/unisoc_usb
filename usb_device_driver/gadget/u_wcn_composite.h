@@ -12,7 +12,7 @@
 #ifndef __U_WCN_COMPOSITE_H
 #define __U_WCN_COMPOSITE_H
 
-#include <usb/composite.h>
+#include "composite.h"
 
 
 #define MAX_U_WCN_INTERFACES	3
@@ -79,21 +79,20 @@ struct f_wcn_dev{
 
 struct f_wcn_dev wcn_usb_dev;
 
+void gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0);
+void gwcn_bt0_disconnect(struct f_wcn_bt0 *wcn_bt0);
+
+void gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1);
+void gwcn_bt1_disconnect(struct f_wcn_bt1 *wcn_bt1);
+
+int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi);
+void gwcn_wifi_disconnect(struct f_wcn_wifi *wcn_wifi);
+
+int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num);
+
+int gwcn_task_init(void);
+
 
 /* utilities to allocate/free request and buffer */
-struct usb_request *gs_alloc_req(struct usb_ep *ep, unsigned len, gfp_t flags);
-void gs_free_req(struct usb_ep *, struct usb_request *req);
 
-/* management of individual TTY ports */
-int gserial_alloc_line(unsigned char *port_line);
-void gserial_free_line(unsigned char port_line);
-
-/* connect/disconnect is handled by individual functions */
-int gserial_connect(struct gserial *, u8 port_num);
-void gserial_disconnect(struct gserial *);
-
-/* functions are bound to configurations by a config or gadget driver */
-int gser_bind_config(struct usb_configuration *c, u8 port_num);
-int obex_bind_config(struct usb_configuration *c, u8 port_num);
-
-#endif /* __U_SERIAL_H */
+#endif /* __U_WCN_COMPOSITE_H */

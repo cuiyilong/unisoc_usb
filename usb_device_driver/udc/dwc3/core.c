@@ -19,12 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "ch9.h"
-#include "gadget.h"
-
 #include "core.h"
 #include "dwc3_gadget.h"
+#include "otg.h"
 
 #include "debug.h"
 

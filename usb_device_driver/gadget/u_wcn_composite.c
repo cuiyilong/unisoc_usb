@@ -1,5 +1,11 @@
+#include "gadget.h"
+
+
+#define DEFAULT_QLEN	2	/* double buffering by default */
+
 u32 gwcn_thread_id = SCI_INVALID_BLOCK_ID;
 SCI_EVENT_GROUP_PTR usb_gwcn_event;
+
 
 
 /* for dual-speed hardware, use deeper queues at high/super speed */
@@ -125,7 +131,7 @@ void gwcn_bt0_disconnect(struct f_wcn_bt0 *wcn_bt0)
 }
 
 
-int gwcn_bt1_connect(struct f_wcn_bt0 *wcn_bt1)
+int gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1)
 {
 	int	result = 0;
 
@@ -155,7 +161,7 @@ fail0:
 	return result;
 }
 
-void gwcn_bt1_disconnect(struct f_wcn_bt0 *wcn_bt1)
+void gwcn_bt1_disconnect(struct f_wcn_bt1 *wcn_bt1)
 {
 	struct usb_request	*req;
 	
@@ -422,7 +428,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 }
 
 
-void gwcn_usb_trans_task(u32 argc, void *data)
+static void gwcn_usb_trans_task(u32 argc, void *data)
 {
 	u32 usb_gwcn_event_flag = 0;
 	int chn;

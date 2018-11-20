@@ -1,3 +1,5 @@
+#include "os_api.h"
+#include "list.h"
 
 #define IS_ALIGNED (((x) & ((typeof(x))(a) - 1)) == 0)
 

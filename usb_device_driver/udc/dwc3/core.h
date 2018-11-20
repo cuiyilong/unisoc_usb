@@ -23,10 +23,10 @@
 
 #include "ch9.h"
 #include "gadget.h"
-#include "otg.h"
 
 
-#include "phy.h"
+
+//#include "phy.h"
 
 #define DWC3_MSG_MAX	500
 

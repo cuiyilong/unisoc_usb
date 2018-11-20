@@ -1,3 +1,4 @@
+#include "u_wcn_composite.h"
 
 static mchn_bus_ops usb_bus_ops;
 

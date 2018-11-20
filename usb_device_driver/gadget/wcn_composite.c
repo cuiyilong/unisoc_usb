@@ -1,5 +1,5 @@
 
-
+#include "composite.h"
 /* Defines */
 
 #define GS_VERSION_STR			"v2.4"

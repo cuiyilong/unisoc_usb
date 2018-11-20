@@ -1,12 +1,8 @@
 #ifndef _TOOLS_TYPES_H_
 #define _TOOLS_TYPES_H_
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "sci_type.h"
 
-#define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
-#include <asm/types.h>
 
 typedef signed char __s8;
 typedef unsigned char __u8;
@@ -28,8 +24,8 @@ typedef unsigned long __u64;
  * typedef __u64 u64;
  * typedef __s64 s64;
  */
-typedef uint64_t u64;
-typedef int64_t s64;
+typedef __u64 u64;
+typedef __s64 s64;
 
 typedef __u32 u32;
 typedef __s32 s32;
@@ -39,7 +35,7 @@ typedef __s16 s16;
 
 typedef __u8  u8;
 typedef __s8  s8;
-
+#if 0
 #ifdef __CHECKER__
 #define __bitwise__ __attribute__((bitwise))
 #else
@@ -62,26 +58,12 @@ typedef __u32 __bitwise __le32;
 typedef __u32 __bitwise __be32;
 typedef __u64 __bitwise __le64;
 typedef __u64 __bitwise __be64;
-
+#endif
 typedef struct {
 	int counter;
 } atomic_t;
 
-#ifndef __aligned_u64
-# define __aligned_u64 __u64 __attribute__((aligned(8)))
-#endif
 
-struct list_head {
-	struct list_head *next, *prev;
-};
-
-struct hlist_head {
-	struct hlist_node *first;
-};
-
-struct hlist_node {
-	struct hlist_node *next, **pprev;
-};
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

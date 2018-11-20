@@ -15,8 +15,11 @@
 #ifndef __USB_GADGET_H
 #define __USB_GADGET_H
 
+#include "ch9.h"
 
-#include <ch9.h>
+#include "mchn.h"
+#include "os_interface.h"
+
 
 
 struct usb_ep;

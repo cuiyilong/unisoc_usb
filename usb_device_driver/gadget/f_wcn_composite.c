@@ -1,4 +1,3 @@
-
 /*
  * f_wcn_composite.c - generic USB WCN function driver
  *
@@ -10,7 +9,7 @@
  * Public License ("GPL") as published by the Free Software Foundation,
  * either version 2 of that License or (at your option) any later version.
  */
-
+#include "u_wcn_composite.h"
 
 
 

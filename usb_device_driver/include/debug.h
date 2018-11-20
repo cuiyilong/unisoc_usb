@@ -1,5 +1,6 @@
 #ifndef __DEBUG_H__
 #define __DEBUG_H__
+#include "os_api.h"
 
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
