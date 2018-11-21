@@ -73,7 +73,7 @@ struct usb_os_desc_ext_prop {
 	char			*name;
 	int			data_len;
 	char			*data;
-	struct config_item	item;
+	//struct config_item	item;
 };
 
 /**
@@ -91,8 +91,8 @@ struct usb_os_desc {
 	struct list_head	ext_prop;
 	int			ext_prop_len;
 	int			ext_prop_count;
-	struct mutex		*opts_mutex;
-	struct config_group	group;
+	//struct mutex		*opts_mutex;
+	//struct config_group	group;
 	//struct module		*owner;
 };
 
@@ -226,7 +226,7 @@ struct usb_function {
 	/* private: */
 	/* internals */
 	struct list_head		list;
-	DECLARE_BITMAP(endpoints, 32);
+	//DECLARE_BITMAP(endpoints, 32);
 	const struct usb_function_driver *fd;
 
 	unsigned int		bind_deactivated:1;

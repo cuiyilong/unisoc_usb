@@ -10,6 +10,7 @@
 #define __USB_OTG_H
 
 #include "gadget.h"
+#include "phy.h"
 
 struct usb_otg {
 	u8			default_a;
@@ -77,6 +78,7 @@ otg_set_vbus(struct usb_otg *otg, bool enabled)
 	return -ENOTSUPP;
 }
 
+#if 0
 /* for HCDs */
 static inline int
 otg_set_host(struct usb_otg *otg, struct usb_bus *host)
@@ -86,6 +88,7 @@ otg_set_host(struct usb_otg *otg, struct usb_bus *host)
 
 	return -ENOTSUPP;
 }
+#endif
 
 /* for usb peripheral controller drivers */
 

@@ -8,7 +8,8 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
-
+ #include "ch9.h"
+#include "gadget.h"
 
 /**
  * usb_ep_autoconfig_ss() - choose an endpoint matching the ep

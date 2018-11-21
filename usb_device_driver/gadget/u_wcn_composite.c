@@ -403,8 +403,10 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 	list_del(&req->list);
 
 	/* temporarily stop TX queue when the freelist empties */
-	if (list_empty(&tx_reqs))
-		usb_stop_queue();
+	if (list_empty(&tx_reqs)) {
+	//	usb_stop_queue();
+
+	}
 
 	req->buf_num = num;
 	req->context = tx_reqs;

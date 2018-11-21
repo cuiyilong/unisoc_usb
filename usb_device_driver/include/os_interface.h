@@ -1,20 +1,13 @@
 #include "os_api.h"
+#include "types.h"
 #include "list.h"
 
-#define IS_ALIGNED (((x) & ((typeof(x))(a) - 1)) == 0)
-
-/* for arm default little endian */
-#define cpu_to_le16(x) x
-#define le16_to_cpu(x) x
-
-#define cpu_to_le64(x)	(x)
-#define cpu_to_le32(x)	(x)
+#define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
 
 
-static inline void le16_add_cpu(__le16 *var, u16 val)
-{
-	*var = cpu_to_le16(le16_to_cpu(*var) + val);
-}
+
+
+
 
 
 
@@ -37,13 +30,13 @@ static SCI_MUTEX_PTR inline mutex_lock_init(const char *name ,SCI_MUTEX_PTR mute
 static void inline mutex_lock(SCI_MUTEX_PTR mutex)
 {
 	if(SCI_InThreadContext() && mutex)
-		SCI_GetMutex(mutex, SCI_WAIT_FOREVER)
+		SCI_GetMutex(mutex, SCI_WAIT_FOREVER);
 }
 
 static void inline mutex_unlock(SCI_MUTEX_PTR mutex)
 {
 	if(SCI_InThreadContext() && mutex)
-		SCI_PutMutex(mutex)
+		SCI_PutMutex(mutex);
 }
 
 

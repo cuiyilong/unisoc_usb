@@ -1168,7 +1168,7 @@ static struct usb_gadget_string_container *copy_gadget_strings(
 	mem += sizeof(void *) * (n_gstrings + 1);
 	mem += sizeof(struct usb_gadget_strings) * n_gstrings;
 	mem += sizeof(struct usb_string) * (n_strings + 1) * (n_gstrings);
-	uc = kmalloc(mem, GFP_KERNEL);
+	uc = usb_malloc(mem);
 	if (!uc)
 		return ERR_PTR(-ENOMEM);
 	gs_array = get_containers_gs(uc);
@@ -1259,7 +1259,7 @@ struct usb_string *usb_gstrings_attach(struct usb_composite_dev *cdev,
 	list_add_tail(&uc->list, &cdev->gstrings);
 	return n_gs[0]->strings;
 err:
-	kfree(uc);
+	usb_mem_free(uc);
 	return ERR_PTR(ret);
 }
 

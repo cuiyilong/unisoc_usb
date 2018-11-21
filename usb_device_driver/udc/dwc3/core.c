@@ -62,7 +62,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
 	reg |= DWC3_GUSB2PHYCFG_PHYSOFTRST;
 	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
-
+#if 0 //cyl add phy
 	usb_phy_init(dwc->usb2_phy);
 	usb_phy_init(dwc->usb3_phy);
 	ret = phy_init(dwc->usb2_generic_phy);
@@ -74,6 +74,7 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 		phy_exit(dwc->usb2_generic_phy);
 		return ret;
 	}
+#endif
 	mdelay(100);
 
 	/* Clear USB3 PHY reset */
@@ -153,7 +154,7 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc)
 static void dwc3_free_one_event_buffer(struct dwc3 *dwc,
 		struct dwc3_event_buffer *evt)
 {
-	usb_dma_mem_free(evt->length, evt->buf, evt->dma);
+	usb_dma_mem_free(evt->buf, evt->dma);
 }
 
 /**
@@ -175,7 +176,7 @@ static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
 
 	evt->dwc	= dwc;
 	evt->length	= length;
-	evt->cache	= usb_malloc(dwc->dev, length);
+	evt->cache	= usb_malloc(length);
 	if (!evt->cache)
 		return ERR_PTR(-ENOMEM);
 
@@ -296,8 +297,8 @@ static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
 	if (!dwc->nr_scratch)
 		return 0;
 
-	dwc->scratchbuf = kmalloc_array(dwc->nr_scratch,
-			DWC3_SCRATCHBUF_SIZE, GFP_KERNEL);
+//	dwc->scratchbuf = kmalloc_array(dwc->nr_scratch,   /*to add*/
+//			DWC3_SCRATCHBUF_SIZE, GFP_KERNEL);
 	if (!dwc->scratchbuf)
 		return -ENOMEM;
 
@@ -306,6 +307,7 @@ static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
 
 static int dwc3_setup_scratch_buffers(struct dwc3 *dwc)
 {
+#if 0
 	dma_addr_t scratch_addr;
 	u32 param;
 	int ret;
@@ -353,6 +355,7 @@ err1:
 
 err0:
 	return ret;
+#endif
 }
 
 static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
@@ -362,7 +365,7 @@ static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
 
 	if (!dwc->nr_scratch)
 		return;
-
+#if 0
 	 /* should never fall here */
 	if (!WARN_ON(dwc->scratchbuf))
 		return;
@@ -370,6 +373,7 @@ static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
 	dma_unmap_single(dwc->dev, dwc->scratch_addr, dwc->nr_scratch *
 			DWC3_SCRATCHBUF_SIZE, DMA_BIDIRECTIONAL);
 	kfree(dwc->scratchbuf);
+#endif
 }
 
 static void dwc3_core_num_eps(struct dwc3 *dwc)
@@ -530,6 +534,7 @@ static void dwc3_core_exit(struct dwc3 *dwc)
 {
 	dwc3_event_buffers_cleanup(dwc);
 
+#if 0
 	usb_phy_shutdown(dwc->usb2_phy);
 	usb_phy_shutdown(dwc->usb3_phy);
 	phy_exit(dwc->usb2_generic_phy);
@@ -539,6 +544,7 @@ static void dwc3_core_exit(struct dwc3 *dwc)
 	usb_phy_set_suspend(dwc->usb3_phy, 1);
 	phy_power_off(dwc->usb2_generic_phy);
 	phy_power_off(dwc->usb3_generic_phy);
+#endif
 }
 
 /**
@@ -678,6 +684,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	/* Adjust Frame Length */
 	dwc3_frame_length_adjustment(dwc);
 
+#ifdef PHY
 	usb_phy_set_suspend(dwc->usb2_phy, 0);
 	usb_phy_set_suspend(dwc->usb3_phy, 0);
 
@@ -688,7 +695,7 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	ret = phy_power_on(dwc->usb3_generic_phy);
 	if (ret < 0)
 		goto err3;
-
+#endif
 	ret = dwc3_event_buffers_setup(dwc);
 	if (ret) {
 		dev_err("failed to setup event buffers\n");
@@ -711,22 +718,23 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	}
 
 	return 0;
+
 err4:
-	phy_power_off(dwc->usb2_generic_phy);
+	//phy_power_off(dwc->usb2_generic_phy);
 
 err3:
-	phy_power_off(dwc->usb3_generic_phy);
+	//phy_power_off(dwc->usb3_generic_phy);
 
 err2:
-	usb_phy_set_suspend(dwc->usb2_phy, 1);
-	usb_phy_set_suspend(dwc->usb3_phy, 1);
-	dwc3_core_exit(dwc);
+	//usb_phy_set_suspend(dwc->usb2_phy, 1);
+	//usb_phy_set_suspend(dwc->usb3_phy, 1);
+	//dwc3_core_exit(dwc);
 
 err1:
-	usb_phy_shutdown(dwc->usb2_phy);
-	usb_phy_shutdown(dwc->usb3_phy);
-	phy_exit(dwc->usb2_generic_phy);
-	phy_exit(dwc->usb3_generic_phy);
+	//usb_phy_shutdown(dwc->usb2_phy);
+	//usb_phy_shutdown(dwc->usb3_phy);
+	//phy_exit(dwc->usb2_generic_phy);
+	//phy_exit(dwc->usb3_generic_phy);
 
 err0:
 	return ret;
@@ -748,7 +756,7 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 {
 	int ret;
 
-
+#if 0
 	dwc->usb2_phy = devm_usb_get_phy(dev, USB_PHY_TYPE_USB2);
 	dwc->usb3_phy = devm_usb_get_phy(dev, USB_PHY_TYPE_USB3);
 	
@@ -801,7 +809,7 @@ static int dwc3_core_get_phy(struct dwc3 *dwc)
 			return ret;
 		}
 	}
-
+#endif
 	return 0;
 }
 
@@ -877,6 +885,7 @@ static int dwc3_probe(void)
 
 	int			ret;
 
+#define CTL_USB_BASE 0x40D00000
 	void			*regs = CTL_USB_BASE; /* 0x40D00000 */
 
 	dwc = usb_malloc(sizeof(*dwc));
@@ -969,7 +978,7 @@ static int dwc3_probe(void)
 		goto err0;
 
 	//spin_lock_init(dwc->lock);
-	mutex_lock_init(dwc->lock);
+	mutex_lock_init("dwc_lock", dwc->lock);
 
 	#if 0
 	if (!dev->dma_mask) {

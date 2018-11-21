@@ -6,10 +6,10 @@
  * drivers.
  */
 
-#ifndef __LINUX_CH11_H
-#define __LINUX_CH11_H
+#ifndef __USB_CH11_H
+#define __USB_CH11_H
 
-#include <linux/types.h>	/* __u8 etc */
+#include "types.h"	/* __u8 etc */
 
 /* This is arbitrary.
  * From USB 2.0 spec Table 11-13, offset 7, a hub can

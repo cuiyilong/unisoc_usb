@@ -6,11 +6,10 @@
  * continue to use just usb_device and usb_gadget.
  */
 
-#ifndef __LINUX_USB_PHY_H
-#define __LINUX_USB_PHY_H
+#ifndef __USB_PHY_H
+#define __USB_PHY_H
 
-#include <linux/notifier.h>
-#include <linux/usb.h>
+
 
 enum usb_phy_interface {
 	USBPHY_INTERFACE_MODE_UNKNOWN,
@@ -81,12 +80,12 @@ struct usb_phy {
 
 	struct usb_otg		*otg;
 
-	struct device		*io_dev;
+	//struct device		*io_dev;
 	struct usb_phy_io_ops	*io_ops;
 	void __iomem		*io_priv;
 
 	/* for notification of usb_phy_events */
-	struct atomic_notifier_head	notifier;
+	//struct atomic_notifier_head	notifier;
 
 	/* to pass extra port status to the root hub */
 	u16			port_status;
@@ -229,7 +228,8 @@ static inline void usb_phy_emphasis_set(struct usb_phy *x, bool enabled)
 }
 
 /* for usb host and peripheral controller drivers */
-#if IS_ENABLED(CONFIG_USB_PHY)
+//#if IS_ENABLED(CONFIG_USB_PHY)
+#if 0
 extern struct usb_phy *usb_get_phy(enum usb_phy_type type);
 extern struct usb_phy *devm_usb_get_phy(struct device *dev,
 	enum usb_phy_type type);
@@ -250,6 +250,7 @@ static inline struct usb_phy *usb_get_phy(enum usb_phy_type type)
 	return ERR_PTR(-ENXIO);
 }
 
+#if 0
 static inline struct usb_phy *devm_usb_get_phy(struct device *dev,
 	enum usb_phy_type type)
 {
@@ -278,6 +279,7 @@ static inline struct usb_phy *devm_usb_get_phy_by_node(struct device *dev,
 	return ERR_PTR(-ENXIO);
 }
 
+
 static inline void usb_put_phy(struct usb_phy *x)
 {
 }
@@ -285,7 +287,7 @@ static inline void usb_put_phy(struct usb_phy *x)
 static inline void devm_usb_put_phy(struct device *dev, struct usb_phy *x)
 {
 }
-
+#endif
 static inline int usb_bind_phy(const char *dev_name, u8 index,
 				const char *phy_dev_name)
 {
@@ -342,6 +344,7 @@ usb_phy_notify_disconnect(struct usb_phy *x, enum usb_device_speed speed)
 		return 0;
 }
 
+#if 0
 /* notifiers */
 static inline int
 usb_register_notifier(struct usb_phy *x, struct notifier_block *nb)
@@ -354,6 +357,7 @@ usb_unregister_notifier(struct usb_phy *x, struct notifier_block *nb)
 {
 	atomic_notifier_chain_unregister(&x->notifier, nb);
 }
+#endif
 
 static inline const char *usb_phy_type_string(enum usb_phy_type type)
 {

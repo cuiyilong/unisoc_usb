@@ -16,45 +16,51 @@
  */
 
 #include "debug.h"
+#include "gadget.h"
 
 
-void trace_dwc3_prepare_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+void trace_dwc3_prepare_trb(struct dwc3_ep *dep,struct dwc3_trb *trb)
 {
-	return 0;
+
 }
 
-void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb)
 {
-	return 0;
+
+}
+
+void trace_dwc3_free_request(struct dwc3_ep *dep,struct dwc3_trb *trb)
+{
+
 }
 
 void trace_dwc3_ctrl_req(struct usb_ctrlrequest *ctrl)
 {
-	return;
+
 }
 void trace_dwc3_ep0(struct va_format *vaf)
 {
-	return;
+
 }
 
 void trace_dwc3_gadget(struct va_format *vaf)
 {
-	return;
+
 }
 
 void trace_dwc3_readl(struct va_format *vaf)
 {
-	return;
+
 }
 
 void trace_dwc3_writel(struct va_format *vaf)
 {
-	return;
-}
 
+}
 
 void dwc3_trace(void (*trace)(struct va_format *), const char *fmt, ...)
 {
+	
 	struct va_format vaf;
 	va_list args;
 

@@ -316,7 +316,7 @@ void dwc3_ep0_out_start(struct dwc3 *dwc)
 		dev_warn("Enter control setup failed ret = %d", ret);
 
 	//complete(&dwc->ep0_in_setup);
-	type = EP0_IN_SETUP;
+	//type = EP0_IN_SETUP;
 	SCI_SetEvent(dwc->ep0_in_setup, type, SCI_OR);
 }
 
@@ -620,7 +620,8 @@ static void dwc3_ep0_set_sel_cmpl(struct usb_ep *ep, struct usb_request *req)
 		u8	u1pel;
 		u16	u2sel;
 		u16	u2pel;
-	} __packed timing;
+	}timing;
+	//} __packed timing;
 
 	int		ret;
 

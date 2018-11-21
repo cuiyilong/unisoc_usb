@@ -1,8 +1,10 @@
 #ifndef _TOOLS_TYPES_H_
 #define _TOOLS_TYPES_H_
 
-#include "sci_type.h"
-
+#include "sci_types.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 typedef signed char __s8;
 typedef unsigned char __u8;
@@ -35,6 +37,12 @@ typedef __s16 s16;
 
 typedef __u8  u8;
 typedef __s8  s8;
+
+typedef __u16 __le16;
+typedef __u32 __le32;
+typedef __u64 __le64;
+
+typedef  BOOLEAN bool;
 #if 0
 #ifdef __CHECKER__
 #define __bitwise__ __attribute__((bitwise))
@@ -86,11 +94,41 @@ typedef struct {
 
 #define __iomem /*  */
 
+
+/* for arm default little endian */
+#define cpu_to_le16(x) x
+#define le16_to_cpu(x) x
+#define __le16_to_cpu(x) x
+
+
+#define cpu_to_le64(x)	(x)
+#define cpu_to_le32(x)	(x)
+
+static inline void le16_add_cpu(__le16 *var, u16 val)
+{
+	*var = cpu_to_le16(le16_to_cpu(*var) + val);
+}
+
 #ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
 typedef u64 dma_addr_t;
 #else
 typedef u32 dma_addr_t;
 #endif
+
+
+#define container_of(ptr, type, member) \
+	((type *)((char *)(ptr) - (unsigned long)(&((type *)0)->member)))
+
+
+#define min_t(type, x, y) ({			\
+	type __min1 = (x);			\
+	type __min2 = (y);			\
+	__min1 < __min2 ? __min1: __min2; })
+
+#define max_t(type, x, y) ({			\
+	type __max1 = (x);			\
+	type __max2 = (y);			\
+	__max1 > __max2 ? __max1: __max2; })
 
 
 #define	EPERM		 1	/* Operation not permitted */
@@ -134,6 +172,8 @@ typedef u32 dma_addr_t;
 #define	ESHUTDOWN	58	/* No send after transport endpoint shutdown */
 #define	ETIMEDOUT	60	/* timed out */
 
+
+#define ENOTSUPP 512
 
 enum {
 	false	= 0,

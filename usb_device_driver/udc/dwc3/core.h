@@ -23,10 +23,11 @@
 
 #include "ch9.h"
 #include "gadget.h"
+#include "otg.h"
 
 
 
-//#include "phy.h"
+#include "phy.h"
 
 #define DWC3_MSG_MAX	500
 
@@ -781,8 +782,8 @@ struct dwc3 {
 	struct usb_phy		*usb2_phy;
 	struct usb_phy		*usb3_phy;
 
-	struct phy		*usb2_generic_phy;
-	struct phy		*usb3_generic_phy;
+	//struct phy		*usb2_generic_phy;
+	//struct phy		*usb3_generic_phy;
 
 	//struct ulpi		*ulpi;
 
@@ -908,7 +909,8 @@ struct dwc3_event_type {
 	u32	is_devspec:1;
 	u32	type:7;
 	u32	reserved8_31:24;
-} __packed;
+};
+//} __packed;
 
 #define DWC3_DEPEVT_XFERCOMPLETE	0x01
 #define DWC3_DEPEVT_XFERINPROGRESS	0x02
@@ -961,7 +963,8 @@ struct dwc3_event_depevt {
 #define DEPEVT_STATUS_CONTROL_STATUS	2
 
 	u32	parameters:16;
-} __packed;
+};
+//} __packed;
 
 /**
  * struct dwc3_event_devt - Device Events
@@ -992,7 +995,8 @@ struct dwc3_event_devt {
 	u32	reserved15_12:4;
 	u32	event_info:9;
 	u32	reserved31_25:7;
-} __packed;
+};
+//} __packed;
 
 /**
  * struct dwc3_event_gevt - Other Core Events
@@ -1006,7 +1010,8 @@ struct dwc3_event_gevt {
 	u32	device_event:7;
 	u32	phy_port_number:4;
 	u32	reserved31_12:20;
-} __packed;
+};
+//} __packed;
 
 /**
  * union dwc3_event - representation of Event Buffer contents
@@ -1050,7 +1055,8 @@ void dwc3_set_mode(struct dwc3 *dwc, u32 mode);
 int dwc3_gadget_resize_tx_fifos(struct dwc3 *dwc);
 void dwc3_core_generic_reset(struct dwc3 *dwc);
 
-#if IS_ENABLED(CONFIG_USB_DWC3_HOST) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+//#if IS_ENABLED(CONFIG_USB_DWC3_HOST) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+#if 0
 int dwc3_host_init(struct dwc3 *dwc);
 void dwc3_host_exit(struct dwc3 *dwc);
 #else
@@ -1060,7 +1066,8 @@ static inline void dwc3_host_exit(struct dwc3 *dwc)
 { }
 #endif
 
-#if IS_ENABLED(CONFIG_USB_DWC3_GADGET) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+//#if IS_ENABLED(CONFIG_USB_DWC3_GADGET) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
+#if 1
 int dwc3_gadget_init(struct dwc3 *dwc);
 void dwc3_gadget_exit(struct dwc3 *dwc);
 int dwc3_gadget_set_test_mode(struct dwc3 *dwc, int mode);
@@ -1091,11 +1098,12 @@ static inline int dwc3_send_gadget_generic_command(struct dwc3 *dwc,
 #endif
 
 /* power management interface */
-#if !IS_ENABLED(CONFIG_USB_DWC3_HOST)
+//#if !IS_ENABLED(CONFIG_USB_DWC3_HOST)
+#if 1
 int dwc3_gadget_suspend(struct dwc3 *dwc);
 int dwc3_gadget_resume(struct dwc3 *dwc);
-int dwc3_host_suspend(struct dwc3 *dwc);
-int dwc3_host_resume(struct dwc3 *dwc);
+//int dwc3_host_suspend(struct dwc3 *dwc);
+//int dwc3_host_resume(struct dwc3 *dwc);
 void dwc3_gadget_process_pending_events(struct dwc3 *dwc);
 #else
 static inline int dwc3_gadget_suspend(struct dwc3 *dwc)

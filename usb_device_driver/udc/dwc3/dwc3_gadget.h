@@ -22,6 +22,7 @@
 #include "list.h"
 #include "gadget.h"
 #include "core.h"
+#include "debug.h"
 
 
 
@@ -59,13 +60,16 @@ struct dwc3;
 #define DWC3_DEPXFERCFG_NUM_XFER_RES(n)	((n) & 0xffff)
 
 /* -------------------------------------------------------------------------- */
+static inline u32 readl(const volatile void __iomem *addr)
+{
+	return *(const volatile u32 *) addr;
+}
 
-#define readl(a) (*((uint32*)(a)))
-#define writel(value, addr) \
-do \ 
-{ \
-	*(volatile uint32 *)addr = value;\
-}while(0)
+static inline void writel(u32 b, volatile void __iomem *addr)
+{
+	*(volatile u32 *) addr = b;
+}
+
 
 static inline u32 dwc3_readl(void __iomem *base, u32 offset)
 {
@@ -137,8 +141,7 @@ void dwc3_ep0_interrupt(struct dwc3 *dwc,
 void dwc3_ep0_out_start(struct dwc3 *dwc);
 int __dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value);
 int dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value);
-int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
-		gfp_t gfp_flags);
+int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request);
 int __dwc3_gadget_ep_set_halt(struct dwc3_ep *dep, int value, int protocol);
 
 /**

@@ -85,13 +85,6 @@ struct usb_ep;
  * it's thinner and promotes more pre-allocation.
  */
 
-struct cpdu_list{
-	struct list_head list;
-	cpdu_t	*buf_head;
-	cpdu_t	*buf_tail;
-	unsigned	buf_num;
-}
-
 struct usb_request {
 	void			*buf;
 	unsigned		length;
@@ -99,13 +92,13 @@ struct usb_request {
 
 #if _linux_
 	struct scatterlist	*sg;
-	unsigned		num_sgs;
-	unsigned		num_mapped_sgs;
 #else
 	cpdu_t	*buf_head;
 	cpdu_t	*buf_tail;
 	unsigned	buf_num;
 #endif
+	unsigned		num_sgs;
+	unsigned		num_mapped_sgs;
 
 
 	unsigned		stream_id:16;
@@ -658,16 +651,17 @@ struct usb_gadget {
 	unsigned			deactivated:1;
 	unsigned			connected:1;
 };
-#define work_to_gadget(w)	(container_of((w), struct usb_gadget, work))
+//#define work_to_gadget(w)	(container_of((w), struct usb_gadget, work))
 
 static inline void set_gadget_data(struct usb_gadget *gadget, void *data)
-	{ gadget->driver_data = data); }
+	{ gadget->driver_data = data; }
 static inline void *get_gadget_data(struct usb_gadget *gadget)
 	{ return gadget->driver_data; }
-static inline struct usb_gadget *dev_to_usb_gadget(struct device *dev)
-{
-	return container_of(dev, struct usb_gadget, dev);
-}
+
+//static inline struct usb_gadget *dev_to_usb_gadget(struct device *dev)
+//{
+//	return container_of(dev, struct usb_gadget, dev);
+//}
 
 /* iterates the non-control endpoints; 'tmp' is a struct usb_ep pointer */
 #define gadget_for_each_ep(tmp, gadget) \
@@ -854,11 +848,12 @@ static inline int usb_gadget_vbus_connect(struct usb_gadget *gadget)
  */
 static inline int usb_gadget_vbus_draw(struct usb_gadget *gadget, unsigned mA)
 {
+	#if 0
 	if (gadget->charger)
 		usb_charger_set_cur_limit_by_type(gadget->charger,
 						  gadget->charger->type,
 						  mA);
-
+	#endif
 	if (!gadget->ops->vbus_draw)
 		return -EOPNOTSUPP;
 	return gadget->ops->vbus_draw(gadget, mA);
