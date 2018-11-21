@@ -1122,4 +1122,19 @@ static inline void dwc3_gadget_process_pending_events(struct dwc3 *dwc)
 #endif /* !IS_ENABLED(CONFIG_USB_DWC3_HOST) */
 
 
+
+void trace_dwc3_gadget(struct va_format *vaf);
+void trace_dwc3_writel(struct va_format *vaf);
+void trace_dwc3_readl(struct va_format *vaf);
+void trace_dwc3_ep0(struct va_format *vaf);
+
+void trace_dwc3_prepare_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
+void trace_dwc3_free_request(trace_dwc3_free_request);
+void trace_dwc3_ctrl_req(struct usb_ctrlrequest *ctrl);
+void trace_dwc3_ep0(struct va_format *vaf);
+void trace_dwc3_gadget(struct va_format *vaf);
+void dwc3_trace(void (*trace)(struct va_format *), const char *fmt, ...);
+
+
 #endif /* __DRIVERS_USB_DWC3_CORE_H */

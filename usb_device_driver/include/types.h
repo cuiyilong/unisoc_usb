@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+
+#include "os_api.h"
+
+
+
 typedef signed char __s8;
 typedef unsigned char __u8;
 
@@ -131,6 +136,17 @@ typedef u32 dma_addr_t;
 	__max1 > __max2 ? __max1: __max2; })
 
 
+/*
+ * This looks more complex than it should be. But we need to
+ * get the type for the ~ right in round_down (it needs to be
+ * as wide as the result!), and we want to evaluate the macro
+ * arguments just once each.
+ */
+#define __round_mask(x, y) ((__typeof__(x))((y)-1))
+#define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+#define round_down(x, y) ((x) & ~__round_mask(x, y))
+
+
 #define	EPERM		 1	/* Operation not permitted */
 #define	ENOENT		 2	/* No such file or directory */
 #define	ESRCH		 3	/* No such process */
@@ -184,5 +200,23 @@ enum {
 	false	= 0,
 	true	= 1
 };
+
+
+
+
+#define dev_err(format, args...) SCI_TRACE_LOW(format, ## args)
+#define dev_dbg(format, args...) SCI_TRACE_LOW(format, ## args)
+#define dev_info(format, args...) SCI_TRACE_LOW(format, ## args)
+#define dev_warn(format, args...) SCI_TRACE_LOW(format, ## args)
+
+
+#define WARN_ON(x) 
+#define WARN_ON_ONCE(x)
+
+struct va_format {
+	const char *fmt;
+	va_list *va;
+};
+
 
 #endif /* _TOOLS_LINUX_TYPES_H_ */
