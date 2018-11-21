@@ -14,7 +14,7 @@
 
 
 #include "composite.h"
-#include "u_os_desc.h"
+//#include "u_os_desc.h"
 
 /**
  * struct usb_os_string - represents OS String to be reported by a gadget
@@ -73,8 +73,9 @@ usb_gadget_get_string (struct usb_gadget_strings *table, int id, u8 *buf)
 
 	/* string descriptors have length, tag, then UTF16-LE text */
 	len = min ((size_t) 126, strlen (s->s));
-	len = utf8s_to_utf16s(s->s, len, UTF16_LITTLE_ENDIAN,
-			(wchar_t *) &buf[2], 126);
+	//cyl fill
+	//len = utf8s_to_utf16s(s->s, len, UTF16_LITTLE_ENDIAN,
+		//	(wchar_t *) &buf[2], 126);
 	if (len < 0)
 		return -EINVAL;
 	buf [0] = (len + 1) * 2;
@@ -293,7 +294,7 @@ void usb_remove_function(struct usb_configuration *c, struct usb_function *f)
 	if (f->disable)
 		f->disable(f);
 
-	bitmap_zero(f->endpoints, 32);
+	//bitmap_zero(f->endpoints, 32);
 	list_del(&f->list);
 	if (f->unbind)
 		f->unbind(c, f);
@@ -353,7 +354,7 @@ int usb_function_activate(struct usb_function *function)
 	unsigned long			flags;
 	int				status = 0;
 
-	spin_lock_irqsave(&cdev->lock, flags);
+	//spin_lock_irqsave(&cdev->lock, flags);
 
 	if (WARN_ON(cdev->deactivations == 0))
 		status = -EINVAL;
@@ -363,7 +364,7 @@ int usb_function_activate(struct usb_function *function)
 			status = usb_gadget_activate(cdev->gadget);
 	}
 
-	spin_unlock_irqrestore(&cdev->lock, flags);
+	//spin_unlock_irqrestore(&cdev->lock, flags);
 	return status;
 }
 
@@ -404,7 +405,7 @@ int usb_interface_id(struct usb_configuration *config,
 	return -ENODEV;
 }
 
-
+#define CONFIG_USB_GADGET_VBUS_DRAW 1
 static u8 encode_bMaxPower(enum usb_device_speed speed,
 		struct usb_configuration *c)
 {
@@ -413,7 +414,7 @@ static u8 encode_bMaxPower(enum usb_device_speed speed,
 	if (c->MaxPower)
 		val = c->MaxPower;
 	else
-		val = CONFIG_USB_GADGET_VBUS_DRAW;
+		val = CONFIG_USB_GADGET_VBUS_DRAW;//cyl 
 	if (!val)
 		return 0;
 	switch (speed) {
@@ -671,7 +672,7 @@ static void reset_config(struct usb_composite_dev *cdev)
 		if (f->disable)
 			f->disable(f);
 
-		bitmap_zero(f->endpoints, 32);
+		//bitmap_zero(f->endpoints, 32);
 	}
 	cdev->config = NULL;
 	cdev->delayed_status = 0;
@@ -758,7 +759,7 @@ static int set_config(struct usb_composite_dev *cdev,
 			ep = (struct usb_endpoint_descriptor *)*descriptors;
 			addr = ((ep->bEndpointAddress & 0x80) >> 3)
 			     |  (ep->bEndpointAddress & 0x0f);
-			set_bit(addr, f->endpoints);
+			//set_bit(addr, f->endpoints);
 		}
 
 		result = f->set_alt(f, tmp, 0);
@@ -933,12 +934,12 @@ void usb_remove_config(struct usb_composite_dev *cdev,
 {
 	unsigned long flags;
 
-	spin_lock_irqsave(&cdev->lock, flags);
+	//spin_lock_irqsave(&cdev->lock, flags);
 
 	if (cdev->config == config)
 		reset_config(cdev);
 
-	spin_unlock_irqrestore(&cdev->lock, flags);
+	//spin_unlock_irqrestore(&cdev->lock, flags);
 
 	remove_config(cdev, config);
 }
@@ -1340,7 +1341,7 @@ static int composite_ep0_queue(struct usb_composite_dev *cdev,
 
 	return ret;
 }
-
+#if 0//cyl
 static int count_ext_compat(struct usb_configuration *c)
 {
 	int i, res;
@@ -1490,7 +1491,7 @@ static int fill_ext_prop(struct usb_configuration *c, int interface, u8 *buf)
 
 	return 0;
 }
-
+#endif
 /*
  * The setup() callback implements all the ep0 functionality that's
  * not handled lower down, in hardware or the hardware driver(like
@@ -1774,6 +1775,7 @@ unknown:
 			buf[5] = 0x01;
 			switch (ctrl->bRequestType & USB_RECIP_MASK) {
 			case USB_RECIP_DEVICE:
+				#if 0//cyl
 				if (w_index != 0x4 || (w_value >> 8))
 					break;
 				buf[6] = w_index;
@@ -1796,12 +1798,14 @@ unknown:
 					fill_ext_compat(os_desc_cfg, buf);
 					value = w_length;
 				}
+				#endif
 				break;
 			case USB_RECIP_INTERFACE:
 				if (w_index != 0x5 || (w_value >> 8))
 					break;
 				interface = w_value & 0xFF;
 				buf[6] = w_index;
+				#if 0//cyl
 				if (w_length == 0x0A) {
 					count = count_ext_prop(os_desc_cfg,
 						interface);
@@ -1826,6 +1830,7 @@ unknown:
 
 					value = w_length;
 				}
+				#endif
 				break;
 			}
 			req->length = value;
@@ -1840,7 +1845,7 @@ unknown:
 			return value;
 		}
 
-		VDBG(cdev,
+		DBG(
 			"non-core control req%02x.%02x v%04x i%04x l%d\n",
 			ctrl->bRequestType, ctrl->bRequest,
 			w_value, w_index, w_length);
@@ -1879,8 +1884,8 @@ unknown:
 				break;
 			endp = ((w_index & 0x80) >> 3) | (w_index & 0x0f);
 			list_for_each_entry(f, &cdev->config->functions, list) {
-				if (test_bit(endp, f->endpoints))
-					break;
+				//if (test_bit(endp, f->endpoints))
+					//break;
 			}
 			if (&f->list == &cdev->config->functions)
 				f = NULL;
@@ -1949,12 +1954,12 @@ void composite_disconnect(struct usb_gadget *gadget)
 	/* REVISIT:  should we have config and device level
 	 * disconnect callbacks?
 	 */
-	spin_lock_irqsave(&cdev->lock, flags);
+	//spin_lock_irqsave(&cdev->lock, flags);
 	if (cdev->config)
 		reset_config(cdev);
 	if (cdev->driver->disconnect)
 		cdev->driver->disconnect(cdev);
-	spin_unlock_irqrestore(&cdev->lock, flags);
+	//spin_unlock_irqrestore(&cdev->lock, flags);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2265,7 +2270,7 @@ int usb_composite_probe(struct usb_composite_driver *driver)
 	gadget_driver = &driver->gadget_driver;
 
 	gadget_driver->function =  (char *) driver->name;
-	gadget_driver->driver.name = driver->name;
+	//gadget_driver->driver.name = driver->name;
 	gadget_driver->max_speed = driver->max_speed;
 
 	return usb_gadget_probe_driver(gadget_driver);

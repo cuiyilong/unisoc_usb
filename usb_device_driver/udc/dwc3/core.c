@@ -861,7 +861,7 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 	case USB_DR_MODE_PERIPHERAL:
 		dwc3_gadget_exit(dwc);
 		break;
-	#ifdef 0
+	#if 0
 	case USB_DR_MODE_HOST:
 		dwc3_host_exit(dwc);
 		break;

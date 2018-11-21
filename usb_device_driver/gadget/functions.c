@@ -26,8 +26,10 @@ static struct usb_function *get_usb_function(const char *name)
 			continue;
 	
 		f  = fd->alloc_func(name);
-		if (IS_ERR(f))
+		if (IS_ERR(f)) {
 			//module_put(fd->mod);
+			f->fd = NULL;
+		}
 		else
 			f->fd = fd;
 		break;

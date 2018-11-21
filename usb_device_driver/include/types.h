@@ -172,6 +172,9 @@ typedef u32 dma_addr_t;
 #define	ESHUTDOWN	58	/* No send after transport endpoint shutdown */
 #define	ETIMEDOUT	60	/* timed out */
 
+#define	ECONNABORTED	61	/* timed out */
+#define EOVERFLOW 62
+
 
 #define ENOTSUPP 512
 

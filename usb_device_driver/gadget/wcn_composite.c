@@ -1,5 +1,6 @@
 
 #include "composite.h"
+#include "u_wcn_composite.h"
 /* Defines */
 
 #define GS_VERSION_STR			"v2.4"
@@ -137,7 +138,7 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 	device_desc.iManufacturer = strings_dev[USB_GADGET_MANUFACTURER_IDX].id;
 	device_desc.iProduct = strings_dev[USB_GADGET_PRODUCT_IDX].id;
 	status = strings_dev[STRING_DESCRIPTION_IDX].id;
-	wcn_comp_config_driver.iConfiguration = status;
+	wcn_comp_config_driver[cfg_idx].iConfiguration = status;
 
 #ifdef USB_OTG
 	if (gadget_is_otg(cdev->gadget)) {
@@ -212,13 +213,13 @@ int wcn_copmosite_init(void)
 	
 	strings_dev[STRING_DESCRIPTION_IDX].s = wcn_comp_config_driver[cfg_idx].label;
 
-	return usb_composite_probe(&wcn_composite_driver[cfg_idx]);
+	return usb_composite_probe(&wcn_composite_driver);
 }
 
 
 static void  wcn_copmosite_cleanup(void)
 {
-	usb_composite_unregister(&wcn_composite_driver[cfg_idx]);
+	usb_composite_unregister(&wcn_composite_driver);
 }
 
 

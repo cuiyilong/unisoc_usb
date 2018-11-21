@@ -18,9 +18,9 @@
 #define NOTIFY_INTERVAL_MS		32
 #define NOTIFY_MAXPACKET		10	/* notification + 2 bytes */
 
-#define MAX_SINGLE_DIR_EPS 15;
 
-
+ struct f_wcn_dev gwcn_usb_dev;
+ struct f_wcn_dev *wcn_usb_dev = &gwcn_usb_dev;
 /*
  * This function packages a simple "generic serial" port with no real
  * control mechanisms, just raw data transfer over two bulk endpoints.
@@ -31,6 +31,7 @@
  */
 
 /*-------------------------------------------------------------------------*/
+
 
 /* interface descriptor: */
 
@@ -259,17 +260,22 @@ static struct usb_descriptor_header *bt1_ss_function[] = {
 /* wifi interface */
 /* full speed support: */
 static struct usb_endpoint_descriptor wifi_fs_bulk_out_desc[7] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
+
 };
 
 static struct usb_endpoint_descriptor wifi_fs_bulk_in_desc[3] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
 };
 
 static struct usb_descriptor_header *wifi_fs_function[] = {
@@ -289,18 +295,22 @@ static struct usb_descriptor_header *wifi_fs_function[] = {
 
 /* high speed support: */
 
-static struct usb_endpoint_descriptor wifi_hs_bulk_out_desc = {
+static struct usb_endpoint_descriptor wifi_hs_bulk_out_desc[7] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
 };
 
-static struct usb_endpoint_descriptor wifi_hs_bulk_in_desc = {
+static struct usb_endpoint_descriptor wifi_hs_bulk_in_desc[3] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
 };
 
 static struct usb_descriptor_header *wifi_hs_function[] = {
@@ -319,24 +329,30 @@ static struct usb_descriptor_header *wifi_hs_function[] = {
 };
 
 
-static struct usb_endpoint_descriptor wifi_ss_bulk_out_desc = {
+static struct usb_endpoint_descriptor wifi_ss_bulk_out_desc[7] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_OUT,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
 };
 
-static struct usb_endpoint_descriptor wifi_ss_bulk_in_desc = {
+static struct usb_endpoint_descriptor wifi_ss_bulk_in_desc[3] = {
+{
 	.bLength =		USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType =	USB_DT_ENDPOINT,
 	.bEndpointAddress =	USB_DIR_IN,
 	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+},
 };
 
 
 static struct usb_ss_ep_comp_descriptor wifi_ss_bulk_comp_desc[10] = {
+{
 	.bLength =              sizeof wifi_ss_bulk_comp_desc,
 	.bDescriptorType =      USB_DT_SS_ENDPOINT_COMP,
+},
 };
 
 static struct usb_descriptor_header *wifi_ss_function[] = {
@@ -439,7 +455,7 @@ static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 			}
 		}
 		gwcn_bt0_connect(wcn_bt0);
-	} else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
+	} else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
 		wcn_bt1 = func_to_wcn_bt1(f);
 		if(wcn_bt1->isoc_in->enabled) {
 			gwcn_bt1_disconnect(wcn_bt1);
@@ -486,11 +502,7 @@ static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
  */
 static int wcn_get_alt(struct usb_function *f, unsigned intf)
 {
-	struct f_ecm		*ecm = func_to_ecm(f);
-
-	if (intf == ecm->ctrl_id)
-		return 0;
-	return ecm->port.in_ep->enabled ? 1 : 0;
+	
 }
 
 static void wcn_disable(struct usb_function *f)
@@ -551,7 +563,7 @@ static int wcn_setup(struct usb_function *f,
 
 		cdev->req->zero = value < w_length;
 		cdev->req->length = value;
-		cdev->req->complete = gser_setup_complete;
+		cdev->req->complete = wcn_setup_complete;
 		rc = usb_ep_queue(cdev->gadget->ep0, cdev->req);
 		if (rc < 0)
 			dev_err(
@@ -641,7 +653,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 				bt0_ss_function);
 		if (status)
 			goto fail;
-	}else if(!strncmp(name,"wcn_bt1",strlen("wcn_bt1"))){
+	}else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
 		bt1_interface_desc.bInterfaceNumber = status;
 		/* allocate instance-specific endpoints */
 		ep = usb_ep_autoconfig(cdev->gadget, &bt1_fs_isoc_out_desc);
@@ -655,7 +667,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 		ep = usb_ep_autoconfig(cdev->gadget, &bt1_fs_isoc_in_desc);
 		if (!ep)
 			goto fail;
-		wcn_usb_dev->wcn_bt0->isoc_in = ep;
+		wcn_usb_dev->wcn_bt1->isoc_in = ep;
 		addr = ep->address & 0xf;
 		wcn_usb_dev->in_ep[addr] = ep;
 		wcn_usb_dev->in_req[addr] = &wcn_usb_dev->wcn_bt1->tx_reqs;

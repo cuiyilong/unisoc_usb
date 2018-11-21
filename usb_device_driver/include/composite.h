@@ -53,7 +53,9 @@
 /* big enough to hold our biggest descriptor */
 #define USB_COMP_EP0_BUFSIZ	1024   //cyl need reduce
 
-#define USB_MS_TO_HS_INTERVAL(x)	(ilog2((x * 1000 / 125)) + 1)
+//#define USB_MS_TO_HS_INTERVAL(x)	(ilog2((x * 1000 / 125)) + 1)
+#define USB_MS_TO_HS_INTERVAL(x)	x //cyl assure
+
 struct usb_configuration;
 
 /**

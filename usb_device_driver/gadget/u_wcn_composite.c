@@ -1,5 +1,5 @@
 #include "gadget.h"
-
+#include "u_wcn_composite.h"
 
 #define DEFAULT_QLEN	2	/* double buffering by default */
 
@@ -9,13 +9,17 @@ SCI_EVENT_GROUP_PTR usb_gwcn_event;
 
 
 /* for dual-speed hardware, use deeper queues at high/super speed */
-static inline int qlen(struct usb_gadget *gadget, unsigned qmult)
+//static inline int qlen(struct usb_gadget *gadget, unsigned qmult)
+static inline int qlen(unsigned qmult)
 {
+	#if 0
 	if (gadget_is_dualspeed(gadget) && (gadget->speed == USB_SPEED_HIGH ||
 					    gadget->speed == USB_SPEED_SUPER))
 		return qmult * DEFAULT_QLEN;
 	else
 		return DEFAULT_QLEN;
+	#endif
+	return DEFAULT_QLEN;
 }
 
 static int gwcn_req_alloc(struct list_head *list, struct usb_ep *ep, unsigned n)
@@ -82,9 +86,9 @@ int gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0)
 	/* alloc requests */
 	
 
-	result = gwcn_req_alloc(wcn_bt0->int_tx_reqs,qlen(wcn_bt0->qmult));
-	result = gwcn_req_alloc(wcn_bt0->bulk_tx_reqs,qlen(wcn_bt0->qmult));
-	result = gwcn_req_alloc(wcn_bt0->rx_reqs,qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(wcn_bt0->int_tx_reqs, wcn_bt0->int_in, qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(wcn_bt0->bulk_tx_reqs, wcn_bt0->bulk_in, qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(wcn_bt0->rx_reqs, wcn_bt0->bulk_out, qlen(wcn_bt0->qmult));
 
 	return result;
 
@@ -104,7 +108,7 @@ void gwcn_bt0_disconnect(struct f_wcn_bt0 *wcn_bt0)
 	
 	usb_ep_disable(wcn_bt0->int_in);
 	while (!list_empty(&wcn_bt0->int_tx_reqs)) {
-		req = container_of(wcn_bt0->tx_reqs.next,
+		req = container_of(wcn_bt0->int_tx_reqs.next,
 					struct usb_request, list);
 		list_del(&req->list);
 		usb_ep_free_request(wcn_bt0->int_in, req);
@@ -147,8 +151,8 @@ int gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1)
 		goto fail0;
 	}
 	/* alloc requests */
-	result = gwcn_req_alloc(wcn_bt1->tx_reqs,qlen(wcn_bt1->qmult));
-	result = gwcn_req_alloc(wcn_bt1->rx_reqs,qlen(wcn_bt1->qmult));
+	result = gwcn_req_alloc(wcn_bt1->tx_reqs, wcn_bt1->isoc_in, qlen(wcn_bt1->qmult));
+	result = gwcn_req_alloc(wcn_bt1->rx_reqs, wcn_bt1->isoc_out, qlen(wcn_bt1->qmult));
 
 	return result;
 
@@ -196,7 +200,7 @@ int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi)
 			goto fail0;
 		}
 		/* alloc requests */
-		result = gwcn_req_alloc(wcn_wifi->tx_reqs[i],qlen(wcn_wifi->qmult));
+		result = gwcn_req_alloc(wcn_wifi->tx_reqs[i], wcn_wifi->bulk_in[i], qlen(wcn_wifi->qmult));
 		
 	}
 	for(i = 0; i < 7; i++) {
@@ -205,7 +209,7 @@ int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi)
 
 			goto fail0;
 		}
-		result = gwcn_req_alloc(wcn_wifi->rx_reqs,qlen(wcn_wifi->qmult));
+		result = gwcn_req_alloc(wcn_wifi->rx_reqs, wcn_wifi->bulk_out[i], qlen(wcn_wifi->qmult));
 	}
 	
 	return result;
@@ -262,7 +266,7 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	int		status = req->status;
 
 	struct list_head	*rx_bufs;
-	struct cpdu_list *cpdu;
+	//struct cpdu_list *cpdu;
 
 	struct f_wcn_dev *p_wcn_usb_dev = ep->driver_data;
 
@@ -277,10 +281,10 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	/* normal completion */
 	case 0:
 
-		rx_bufs = p_wcn_usb_dev->rx_bufs[]
+		//rx_bufs = p_wcn_usb_dev->rx_bufs[]
 		
 		/* add buf to rx list */
-		list_add_tail(&cpdu->list, rx_bufs);
+//		list_add_tail(&cpdu->list, rx_bufs);
 		
 		
 
@@ -322,13 +326,15 @@ int usb_wcn_rx_submit(struct usb_ep *ep)
 	struct usb_request *req;
 	struct list_head *rx_reqs;
 
-	struct cpdu_list *cpdu;
+
+
+	int ret;
 
 	ep->driver_data = &wcn_usb_dev;
 
 	rx_reqs = wcn_usb_request_queue_get(ep->address);
 	if (list_empty(&rx_reqs)) {
-		return USB_RX_BUSY;
+		//return USB_RX_BUSY;
 	}
 
 	req = container_of(rx_reqs->next, struct usb_request, list);
@@ -338,12 +344,12 @@ int usb_wcn_rx_submit(struct usb_ep *ep)
 
 	/* get free buffer */
 
-	req->buf = cpdu->buf_head->buf;
-	req->length = cpdu->buf_head->len;
-	req->complete = rx_complete;
-	req->context = &cpdu;
+	//req->buf = cpdu->buf_head->buf;
+	//req->length = cpdu->buf_head->len;
+	//req->complete = usb_wcn_rx_complete;
+	//req->context = &cpdu;
 
-	retval = usb_ep_queue(ep, req);
+	ret = usb_ep_queue(ep, req);
 }
 
 static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
@@ -363,6 +369,7 @@ static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
 	case -ESHUTDOWN:		/* disconnect etc */
 		break;
 	case 0:
+		break;
 		
 	}
 
@@ -388,15 +395,15 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 	ep_addr = IN_CHN_TO_EP_ADDR(chn);
 	ep = wcn_ep_get(ep_addr);
 	if(!ep)
-		return USB_CHN_ERR;
+		//return USB_CHN_ERR;
 
 	tx_reqs = wcn_usb_request_queue_get(ep_addr);
 	if (unlikely(!tx_reqs)) {
-		return USB_CHN_ERR;
+		//return USB_CHN_ERR;
 	}
 
 	if (list_empty(&tx_reqs)) {
-		return USB_TX_BUSY;
+		//return USB_TX_BUSY;
 	}
 
 	req = container_of(tx_reqs->next, struct usb_request, list);
@@ -410,15 +417,15 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 
 	req->buf_num = num;
 	req->context = tx_reqs;
-	req->cpdu.buf_head = head;
-	req->cpdu.buf_tail = tail;
+	//req->cpdu.buf_head = head;
+	//req->cpdu.buf_tail = tail;
 	/* buf link or only buf */
 	if (num > 1) {
 
-		req->length = /* cyl?? */
+		//req->length = /* cyl?? */
 
 	} else {
-		req->buf = head->buf;
+		//req->buf = head->buf;
 		req->length = head->len;
 	}
 	
@@ -436,7 +443,7 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 	int chn;
 
 	struct list_head	*rx_bufs;
-	struct cpdu_list *cpdu;
+	//struct cpdu_list *cpdu;
 
 	
 	
@@ -447,11 +454,11 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 
 		rx_bufs = 
 		/* hand rx list */
-		while (!list_empty(rx_bufs)){
-			cpdu = list_first_entry(rx_bufs, struct cpdu_list, list);
-			chn = OUT_EP_ADDR_TO_CHN(ep->address);
-			bus_hw_pop_link(chn, cpdu->buf_head, cpdu->buf_head, cpdu->buf_num);
-
+		while (!list_empty(rx_bufs)) {
+//			cpdu = list_first_entry(rx_bufs, struct cpdu_list, list);
+			//chn = OUT_EP_ADDR_TO_CHN(ep->address);
+	//		bus_hw_pop_link(chn, cpdu->buf_head, cpdu->buf_head, cpdu->buf_num);
+			chn = 1;
 		}
 
 
@@ -459,12 +466,12 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 	}
 }
 
-
+#define SCI_PRIOTY_USB 20
 int gwcn_task_init(void)
 {
 	/* init rx task */
 	gwcn_thread_id = SCI_CreateThread("usb_gwcn_task","usb_gwcn_queue",gwcn_usb_trans_task,0,NULL,
-		2048,10,SCI_PRIOTY_HIGHEST,SCI_PREEMPT,SCI_AUTO_ACTIVATE);
+		2048,10,SCI_PRIOTY_USB,SCI_PREEMPT,SCI_AUTO_ACTIVATE);
 	if (gwcn_thread_id == SCI_INVALID_BLOCK_ID) {
 		SCI_ASSERT(0);
 		return -1;

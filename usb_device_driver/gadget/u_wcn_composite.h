@@ -25,7 +25,7 @@
 #define IN_EP_ADDR_TO_CHN(addr) (addr - 0x80 + 0x10) 
 #define OUT_EP_ADDR_TO_CHN(addr) addr
 
-
+#define MAX_SINGLE_DIR_EPS 15
 
 const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
@@ -77,12 +77,12 @@ struct f_wcn_dev{
 	struct list_head	rx_bufs[MAX_U_WCN_INTERFACES];
 };
 
-struct f_wcn_dev wcn_usb_dev;
+extern struct f_wcn_dev *wcn_usb_dev;
 
-void gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0);
+int gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0);
 void gwcn_bt0_disconnect(struct f_wcn_bt0 *wcn_bt0);
 
-void gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1);
+int gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1);
 void gwcn_bt1_disconnect(struct f_wcn_bt1 *wcn_bt1);
 
 int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi);

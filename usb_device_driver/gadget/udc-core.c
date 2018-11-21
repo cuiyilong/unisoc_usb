@@ -20,7 +20,7 @@
 
 #include "ch9.h"
 #include "gadget.h"
-#include "usb.h"
+
 
 
 /**
@@ -375,9 +375,9 @@ static int udc_bind_to_driver(struct usb_udc *udc, struct usb_gadget_driver *dri
 
 	return 0;
 err1:
-	if (ret != -EISNAM)
-		dev_err("failed to start %s: %d\n",
-			udc->driver->function, ret);
+	//if (ret != -EISNAM)
+	dev_err("failed to start %s: %d\n",
+		udc->driver->function, ret);
 	udc->driver = NULL;
 
 	return ret;
