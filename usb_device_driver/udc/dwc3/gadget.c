@@ -1020,7 +1020,7 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param,
 	u32				cmd;
 
 	if (dwc->pullups_connected == false) {
-		dev_warn(dwc->dev,
+		dev_warn(
 			 "DWC gadget is disconnected and ignore transfer.\n");
 		return -ESHUTDOWN;
 	}

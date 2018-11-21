@@ -18,7 +18,6 @@ static struct usb_function *get_usb_function(const char *name)
 	struct usb_function_driver *fd;
 	struct usb_function *f;
 
-	f = ERR_PTR(-ENOENT);
 	mutex_lock(&func_lock);
 	list_for_each_entry(fd, &func_list, list) {
 
@@ -26,12 +25,9 @@ static struct usb_function *get_usb_function(const char *name)
 			continue;
 	
 		f  = fd->alloc_func(name);
-		if (IS_ERR(f)) {
-			//module_put(fd->mod);
-			f->fd = NULL;
-		}
-		else
+		if (f) {
 			f->fd = fd;
+		}
 		break;
 	}
 	mutex_unlock(&func_lock);

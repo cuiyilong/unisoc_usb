@@ -1171,7 +1171,7 @@ static struct usb_gadget_string_container *copy_gadget_strings(
 	mem += sizeof(struct usb_string) * (n_strings + 1) * (n_gstrings);
 	uc = usb_malloc(mem);
 	if (!uc)
-		return ERR_PTR(-ENOMEM);
+		return NULL;
 	gs_array = get_containers_gs(uc);
 	stash = uc->stash;
 	stash += sizeof(void *) * (n_gstrings + 1);
@@ -1233,11 +1233,11 @@ struct usb_string *usb_gstrings_attach(struct usb_composite_dev *cdev,
 		n_gstrings++;
 
 	if (!n_gstrings)
-		return ERR_PTR(-EINVAL);
+		return NULL;
 
 	uc = copy_gadget_strings(sp, n_gstrings, n_strings);
-	if (IS_ERR(uc))
-		return ERR_CAST(uc);
+	if (!uc)
+		return NULL;
 
 	n_gs = get_containers_gs(uc);
 	ret = usb_string_ids_tab(cdev, n_gs[0]->strings);
@@ -1261,7 +1261,7 @@ struct usb_string *usb_gstrings_attach(struct usb_composite_dev *cdev,
 	return n_gs[0]->strings;
 err:
 	usb_mem_free(uc);
-	return ERR_PTR(ret);
+	return NULL;
 }
 
 
@@ -2083,14 +2083,14 @@ int composite_os_desc_req_prepare(struct usb_composite_dev *cdev,
 
 	cdev->os_desc_req = usb_ep_alloc_request(ep0);
 	if (!cdev->os_desc_req) {
-		ret = PTR_ERR(cdev->os_desc_req);
+		ret = -ENULLPOINTER;
 		goto end;
 	}
 
 	/* OS feature descriptor length <= 4kB */
 	cdev->os_desc_req->buf = usb_malloc(4096); //cyl  need reduce
 	if (!cdev->os_desc_req->buf) {
-		ret = PTR_ERR(cdev->os_desc_req->buf);
+		ret = -ENULLPOINTER;
 		usb_mem_free(cdev->os_desc_req);
 		goto end;
 	}

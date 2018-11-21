@@ -86,9 +86,9 @@ int gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0)
 	/* alloc requests */
 	
 
-	result = gwcn_req_alloc(wcn_bt0->int_tx_reqs, wcn_bt0->int_in, qlen(wcn_bt0->qmult));
-	result = gwcn_req_alloc(wcn_bt0->bulk_tx_reqs, wcn_bt0->bulk_in, qlen(wcn_bt0->qmult));
-	result = gwcn_req_alloc(wcn_bt0->rx_reqs, wcn_bt0->bulk_out, qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(&wcn_bt0->int_tx_reqs, wcn_bt0->int_in, qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(&wcn_bt0->bulk_tx_reqs, wcn_bt0->bulk_in, qlen(wcn_bt0->qmult));
+	result = gwcn_req_alloc(&wcn_bt0->rx_reqs, wcn_bt0->bulk_out, qlen(wcn_bt0->qmult));
 
 	return result;
 
@@ -151,8 +151,8 @@ int gwcn_bt1_connect(struct f_wcn_bt1 *wcn_bt1)
 		goto fail0;
 	}
 	/* alloc requests */
-	result = gwcn_req_alloc(wcn_bt1->tx_reqs, wcn_bt1->isoc_in, qlen(wcn_bt1->qmult));
-	result = gwcn_req_alloc(wcn_bt1->rx_reqs, wcn_bt1->isoc_out, qlen(wcn_bt1->qmult));
+	result = gwcn_req_alloc(&wcn_bt1->tx_reqs, wcn_bt1->isoc_in, qlen(wcn_bt1->qmult));
+	result = gwcn_req_alloc(&wcn_bt1->rx_reqs, wcn_bt1->isoc_out, qlen(wcn_bt1->qmult));
 
 	return result;
 
@@ -200,7 +200,7 @@ int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi)
 			goto fail0;
 		}
 		/* alloc requests */
-		result = gwcn_req_alloc(wcn_wifi->tx_reqs[i], wcn_wifi->bulk_in[i], qlen(wcn_wifi->qmult));
+		result = gwcn_req_alloc(&wcn_wifi->tx_reqs[i], wcn_wifi->bulk_in[i], qlen(wcn_wifi->qmult));
 		
 	}
 	for(i = 0; i < 7; i++) {
@@ -209,7 +209,7 @@ int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi)
 
 			goto fail0;
 		}
-		result = gwcn_req_alloc(wcn_wifi->rx_reqs, wcn_wifi->bulk_out[i], qlen(wcn_wifi->qmult));
+		result = gwcn_req_alloc(&wcn_wifi->rx_reqs, wcn_wifi->bulk_out[i], qlen(wcn_wifi->qmult));
 	}
 	
 	return result;
@@ -452,7 +452,7 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 		if (usb_gwcn_event != 0x1)
 			continue;
 
-		rx_bufs = 
+		//rx_bufs = 
 		/* hand rx list */
 		while (!list_empty(rx_bufs)) {
 //			cpdu = list_first_entry(rx_bufs, struct cpdu_list, list);
@@ -462,7 +462,7 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 		}
 
 
-		usb_wcn_rx_submit();
+		//usb_wcn_rx_submit();
 	}
 }
 

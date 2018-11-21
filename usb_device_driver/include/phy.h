@@ -247,7 +247,7 @@ extern void usb_phy_set_event(struct usb_phy *x, unsigned long event);
 #else
 static inline struct usb_phy *usb_get_phy(enum usb_phy_type type)
 {
-	return ERR_PTR(-ENXIO);
+	return NULL;
 }
 
 #if 0

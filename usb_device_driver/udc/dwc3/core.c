@@ -172,17 +172,17 @@ static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
 
 	evt = usb_malloc(sizeof(*evt));
 	if (!evt)
-		return ERR_PTR(-ENOMEM);
+		return NULL;
 
 	evt->dwc	= dwc;
 	evt->length	= length;
 	evt->cache	= usb_malloc(length);
 	if (!evt->cache)
-		return ERR_PTR(-ENOMEM);
+		return NULL;
 
 	evt->buf	= usb_dma_malloc(length, &evt->dma);
 	if (!evt->buf)
-		return ERR_PTR(-ENOMEM);
+		return NULL;
 
 	return evt;
 }
@@ -227,9 +227,9 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
 		struct dwc3_event_buffer	*evt;
 
 		evt = dwc3_alloc_one_event_buffer(dwc, length);
-		if (IS_ERR(evt)) {
+		if (!evt) {
 			dev_err("can't allocate event buffer\n");
-			return PTR_ERR(evt);
+			return -ENULLPOINTER;
 		}
 		dwc->ev_buffs[i] = evt;
 	}

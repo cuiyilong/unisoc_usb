@@ -173,10 +173,12 @@ typedef u32 dma_addr_t;
 #define	ETIMEDOUT	60	/* timed out */
 
 #define	ECONNABORTED	61	/* timed out */
-#define EOVERFLOW 62
+#define	EOVERFLOW 62
+
+#define	ENULLPOINTER 63
 
 
-#define ENOTSUPP 512
+#define	ENOTSUPP 512
 
 enum {
 	false	= 0,

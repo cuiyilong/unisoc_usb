@@ -99,8 +99,8 @@ static int wcn_composite_register_func(struct usb_composite_dev *cdev,
 
 	for(i = 0;i < MAX_U_WCN_INTERFACES;i++) {
 		f_wcn[i] = get_usb_function(f_inf_name[i]);
-		if (IS_ERR(f_wcn[i])) {
-			ret = PTR_ERR(f_wcn[i]);
+		if (!f_wcn[i]) {
+			ret = -ENULLPOINTER;
 			goto fail;
 		}
 

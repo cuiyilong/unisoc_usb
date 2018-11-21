@@ -802,7 +802,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 		
 		wcn_bt0= usb_malloc(sizeof(struct f_wcn_bt0));
 		if (!wcn_bt0)
-			return ERR_PTR(-ENOMEM);
+			return NULL;
 		wcn_usb_dev->wcn_bt0 = wcn_bt0;
 		func = &wcn_bt0->func;
 		INIT_LIST_HEAD(&wcn_bt0->int_tx_reqs);
@@ -813,7 +813,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 		
 		wcn_bt1= usb_malloc(sizeof(struct f_wcn_bt1));
 		if (!wcn_bt1)
-			return ERR_PTR(-ENOMEM);
+			return NULL;
 		wcn_usb_dev->wcn_bt1 = wcn_bt1;
 		func = &wcn_bt1->func;
 		INIT_LIST_HEAD(&wcn_bt1->tx_reqs);
@@ -821,7 +821,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 	} else {
 		wcn_wifi= usb_malloc(sizeof(struct f_wcn_wifi));
 		if (!wcn_wifi)
-			return ERR_PTR(-ENOMEM);
+			return NULL;
 		wcn_usb_dev->wcn_wifi = wcn_wifi;
 		func = &wcn_wifi->func;
 		for (i = 0; i < 3; i++)
