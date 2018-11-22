@@ -30,7 +30,7 @@ void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb)
 
 }
 
-void trace_dwc3_free_request(struct usb_request *request)
+void trace_dwc3_free_request(struct dwc3_request *request)
 {
 
 }

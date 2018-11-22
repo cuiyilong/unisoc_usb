@@ -27,6 +27,7 @@
 #include "core.h"
 #include "dwc3_gadget.h"
 
+#include "isr_drvapi.h"
 
 
 /**
@@ -1130,7 +1131,7 @@ static int __dwc3_gadget_ep_queue(struct dwc3_ep *dep, struct dwc3_request *req)
 	req->direction		= dep->direction;
 	req->epnum		= dep->number;
 
-	trace_dwc3_ep_queue(req);
+	//trace_dwc3_ep_queue(req);
 
 	/*
 	 * We only add to our list of requests now and
@@ -1282,9 +1283,9 @@ static int dwc3_gadget_ep_dequeue(struct usb_ep *ep,
 	unsigned long			flags;
 	int				ret = 0;
 
-	trace_dwc3_ep_dequeue(req);
+//	trace_dwc3_ep_dequeue(req);
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 
 	list_for_each_entry(r, &dep->request_list, list) {
 		if (r == req)
@@ -1312,7 +1313,7 @@ out1:
 	dwc3_gadget_giveback(dep, req, -ECONNRESET);
 
 out0:
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
@@ -1368,9 +1369,9 @@ static int dwc3_gadget_ep_set_halt(struct usb_ep *ep, int value)
 
 	int				ret;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	ret = __dwc3_gadget_ep_set_halt(dep, value, false);
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
@@ -1382,14 +1383,14 @@ static int dwc3_gadget_ep_set_wedge(struct usb_ep *ep)
 	unsigned long			flags;
 	int				ret;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	dep->flags |= DWC3_EP_WEDGE;
 
 	if (dep->number == 0 || dep->number == 1)
 		ret = __dwc3_gadget_ep0_set_halt(ep, 1);
 	else
 		ret = __dwc3_gadget_ep_set_halt(dep, 1, false);
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
@@ -1525,9 +1526,9 @@ static int dwc3_gadget_set_selfpowered(struct usb_gadget *g,
 	struct dwc3		*dwc = gadget_to_dwc(g);
 	unsigned long		flags;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	g->is_selfpowered = !!is_selfpowered;
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return 0;
 }
@@ -1624,11 +1625,11 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 {
 	struct dwc3		*dwc = gadget_to_dwc(g);
-	unsigned long		flags;
+	u32		flags;
 	int			ret;
 	u32 timeout = 500; /* time out ms?*/
-	u32 event_flag;
-	u32 event_num;
+	uint32 event_flag;
+	uint32 event_num;
 
 	is_on = !!is_on;
 
@@ -1786,7 +1787,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 #define USB_INT_NUM 29
 	dwc->irq_gadget = USB_INT_NUM; //cyl int_req_usb  num  29
-	ret = ISR_RegHander_EX(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt);
+	ret = ISR_RegHandler_EX(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt, CHIPDRV_HISR_PRIO_0, NULL);
 
 	if (ret) {
 		dev_err("failed to request irq #%d --> %d\n",
@@ -1822,7 +1823,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 err1:
 	//spin_unlock_irqrestore(&dwc->lock, flags);
-	ISR_UnRegHander(dwc->irq_gadget);
+	ISR_UnRegHandler(dwc->irq_gadget);
 err0:
 	return ret;
 }
@@ -1847,7 +1848,7 @@ static void dwc3_wait_command_complete(struct dwc3 *dwc)
 	unsigned long flags;
 	u32 epnum, epstart = 2;
 	int ret, wait_cmd_complete = 0;
-	u32 event_num, event_flag;
+	uint32 event_num, event_flag;
 
 check_next:
 	//spin_lock_irqsave(&dwc->lock, flags);
@@ -1857,7 +1858,7 @@ check_next:
 	 */
 	 #ifdef SUSPEND
 	if (pm_runtime_suspended(dwc->dev)) {
-		spin_unlock_irqrestore(&dwc->lock, flags);
+		//spin_unlock_irqrestore(&dwc->lock, flags);
 		return;
 	}
 	#endif
@@ -2680,9 +2681,8 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 		 * BESL value in the LPM token is less than or equal to LPM
 		 * NYET threshold.
 		 */
-		WARN_ONCE(dwc->revision < DWC3_REVISION_240A
-				&& dwc->has_lpm_erratum,
-				"LPM Erratum not available on dwc3 revisisions < 2.40a\n");
+		if(dwc->revision < DWC3_REVISION_240A && dwc->has_lpm_erratum)
+			WARNING("LPM Erratum not available on dwc3 revisisions < 2.40a\n");
 
 		if (dwc->has_lpm_erratum && dwc->revision >= DWC3_REVISION_240A)
 			reg |= DWC3_DCTL_LPM_ERRATA(dwc->lpm_nyet_threshold);
@@ -2881,9 +2881,10 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
 		dwc3_gadget_wakeup_interrupt(dwc);
 		break;
 	case DWC3_DEVICE_EVENT_HIBER_REQ:
-		if (dev_warn(!dwc->has_hibernation,
-					"unexpected hibernation event\n"))
+		if (!dwc->has_hibernation) {
+			dev_warn("unexpected hibernation event\n");
 			break;
+		}
 
 		dwc3_gadget_hibernation_interrupt(dwc, event->event_info);
 		break;

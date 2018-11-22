@@ -514,6 +514,7 @@ struct usb_function_driver {
 void usb_function_unregister(struct usb_function_driver *f);
 int usb_function_register(struct usb_function_driver *newf);
 void usb_put_function(struct usb_function *f);
+struct usb_function *get_usb_function(const char *name);
 struct usb_configuration *usb_get_config(struct usb_composite_dev *cdev,
 		int val);
 int usb_add_config_only(struct usb_composite_dev *cdev,

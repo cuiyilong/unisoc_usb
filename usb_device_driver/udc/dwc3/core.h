@@ -1130,7 +1130,7 @@ void trace_dwc3_ep0(struct va_format *vaf);
 
 void trace_dwc3_prepare_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
 void trace_dwc3_complete_trb(struct dwc3_ep *dep,struct dwc3_trb *trb);
-void trace_dwc3_free_request(trace_dwc3_free_request);
+void trace_dwc3_free_request(struct dwc3_request * request);
 void trace_dwc3_ctrl_req(struct usb_ctrlrequest *ctrl);
 void trace_dwc3_ep0(struct va_format *vaf);
 void trace_dwc3_gadget(struct va_format *vaf);

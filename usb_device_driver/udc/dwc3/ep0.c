@@ -26,6 +26,7 @@
 #include "core.h"
 #include "debug.h"
 #include "dwc3_gadget.h"
+#include "dwc3_debug.h"
 
 
 static void __dwc3_ep0_do_control_status(struct dwc3 *dwc, struct dwc3_ep *dep);
@@ -298,9 +299,9 @@ int dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value)
 	unsigned long			flags;
 	int				ret;
 
-	spin_lock_irqsave(&dwc->lock, flags);
+	//spin_lock_irqsave(&dwc->lock, flags);
 	ret = __dwc3_gadget_ep0_set_halt(ep, value);
-	spin_unlock_irqrestore(&dwc->lock, flags);
+	//spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }

@@ -2,13 +2,22 @@
 #include "types.h"
 #include "list.h"
 
-#define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
 
 
 
+#define udelay(x) SCI_Delay(x)
 
 
+static inline void mdelay(x) {
+	u16 count = 0;
 
+	do { 
+		SCI_Delay(1000)
+	} while(count++ < x)
+};
+
+
+#define BUG() SCI_ASSERT(0)
 
 
 /* int return value */
@@ -43,7 +52,7 @@ static inline void *usb_malloc(size_t size)
 {
 	return SCI_ALLOC(size);
 }
-static inline void *usb_mem_free(void *p)
+static inline void usb_mem_free(void *p)
 {
 	SCI_FREE(p);
 }
@@ -54,10 +63,10 @@ static inline void *usb_dma_malloc(size_t size, dma_addr_t *dma_handle)
 	dma_handle = (dma_addr_t *)addr;
 	return addr;
 }
-static inline void *usb_dma_mem_free(void *p, dma_addr_t *dma_handle)
+static inline void usb_dma_mem_free(void *p, dma_addr_t dma_handle)
 {
 	SCI_FREE(p);
-	dma_handle = NULL;
+	dma_handle = 0;
 }
 
 void enable_irq(u32 irq);

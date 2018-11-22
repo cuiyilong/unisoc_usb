@@ -76,7 +76,7 @@ typedef struct {
 	int counter;
 } atomic_t;
 
-
+#define BIT(nr)			(1UL << (nr))
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -114,16 +114,29 @@ static inline void le16_add_cpu(__le16 *var, u16 val)
 	*var = cpu_to_le16(le16_to_cpu(*var) + val);
 }
 
-#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
-typedef u64 dma_addr_t;
-#else
-typedef u32 dma_addr_t;
-#endif
+
+typedef unsigned long  dma_addr_t;
 
 
 #define container_of(ptr, type, member) \
 	((type *)((char *)(ptr) - (unsigned long)(&((type *)0)->member)))
 
+
+#ifndef max
+#define max(x, y) ({				\
+	typeof(x) _max1 = (x);			\
+	typeof(y) _max2 = (y);			\
+	(void) (&_max1 == &_max2);		\
+	_max1 > _max2 ? _max1 : _max2; })
+#endif
+
+#ifndef min
+#define min(x, y) ({				\
+	typeof(x) _min1 = (x);			\
+	typeof(y) _min2 = (y);			\
+	(void) (&_min1 == &_min2);		\
+	_min1 < _min2 ? _min1 : _min2; })
+#endif
 
 #define min_t(type, x, y) ({			\
 	type __min1 = (x);			\
@@ -145,6 +158,27 @@ typedef u32 dma_addr_t;
 #define __round_mask(x, y) ((__typeof__(x))((y)-1))
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 #define round_down(x, y) ((x) & ~__round_mask(x, y))
+
+#define roundup(x, y) (					\
+{							\
+	const typeof(y) __y = y;			\
+	(((x) + (__y - 1)) / __y) * __y;		\
+}							\
+)
+#define rounddown(x, y) (				\
+{							\
+	typeof(x) __x = (x);				\
+	__x - (__x % (y));				\
+}							\
+)
+
+#define DIV_ROUND(n, d)		(((n) + ((d)/2)) / (d))
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
+#define IS_ALIGNED(x, a)		(((x) & ((typeof(x))(a) - 1)) == 0)
+#define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
+#define ALIGN(x,a)	__ALIGN_MASK((x),(typeof(x))(a)-1)
+
 
 
 #define	EPERM		 1	/* Operation not permitted */

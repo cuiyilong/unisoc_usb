@@ -413,8 +413,7 @@ static inline struct f_wcn_wifi *func_to_wcn_wifi(struct usb_function *f)
 
 
 /*-------------------------------------------------------------------------*/
-
-inline struct list_head *wcn_usb_request_queue_get(u8 ep_addr)
+struct list_head *wcn_usb_request_queue_get(u8 ep_addr)
 {
 	if(ep_addr & USB_DIR_IN)
 		return wcn_usb_dev->in_req[UE_GET_ADDR(ep_addr)];
@@ -422,13 +421,14 @@ inline struct list_head *wcn_usb_request_queue_get(u8 ep_addr)
 		return wcn_usb_dev->out_req[UE_GET_ADDR(ep_addr)];
 }
 
-inline struct usb_ep *wcn_ep_get(u8 ep_addr)
+struct usb_ep *wcn_ep_get(u8 ep_addr)
 {
 	if(ep_addr & USB_DIR_IN)
 		return wcn_usb_dev->in_ep[UE_GET_ADDR(ep_addr)];
 	else
 		return wcn_usb_dev->out_ep[UE_GET_ADDR(ep_addr)];
 }
+
 static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 {
 	struct f_wcn_bt0 * wcn_bt0;

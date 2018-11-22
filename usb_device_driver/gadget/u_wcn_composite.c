@@ -1,9 +1,10 @@
 #include "gadget.h"
 #include "u_wcn_composite.h"
+#include "f_wcn_composite.h"
 
 #define DEFAULT_QLEN	2	/* double buffering by default */
 
-u32 gwcn_thread_id = SCI_INVALID_BLOCK_ID;
+uint32 gwcn_thread_id = SCI_INVALID_BLOCK_ID;
 SCI_EVENT_GROUP_PTR usb_gwcn_event;
 
 
@@ -209,7 +210,7 @@ int gwcn_wifi_connect(struct f_wcn_wifi *wcn_wifi)
 
 			goto fail0;
 		}
-		result = gwcn_req_alloc(&wcn_wifi->rx_reqs, wcn_wifi->bulk_out[i], qlen(wcn_wifi->qmult));
+		result = gwcn_req_alloc(&wcn_wifi->rx_reqs[i], wcn_wifi->bulk_out[i], qlen(wcn_wifi->qmult));
 	}
 	
 	return result;
@@ -439,7 +440,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 
 static void gwcn_usb_trans_task(u32 argc, void *data)
 {
-	u32 usb_gwcn_event_flag = 0;
+	uint32 usb_gwcn_event_flag = 0;
 	int chn;
 
 	struct list_head	*rx_bufs;
@@ -449,7 +450,7 @@ static void gwcn_usb_trans_task(u32 argc, void *data)
 	
 	while(1) {
 		SCI_GetEvent(usb_gwcn_event, 0xffff, SCI_OR_CLEAR, &usb_gwcn_event_flag, SCI_WAIT_FOREVER);
-		if (usb_gwcn_event != 0x1)
+		if (usb_gwcn_event_flag != 0x1)
 			continue;
 
 		//rx_bufs = 

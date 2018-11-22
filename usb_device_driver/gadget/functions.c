@@ -13,7 +13,7 @@ void function_init(void)
 	INIT_LIST_HEAD(&func_list);
 }
 
-static struct usb_function *get_usb_function(const char *name)
+struct usb_function *get_usb_function(const char *name)
 {
 	struct usb_function_driver *fd;
 	struct usb_function *f;
