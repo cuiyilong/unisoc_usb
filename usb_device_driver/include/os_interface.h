@@ -12,8 +12,8 @@ static inline void mdelay(x) {
 	u16 count = 0;
 
 	do { 
-		SCI_Delay(1000)
-	} while(count++ < x)
+		SCI_Delay(1000);
+	} while(count++ < x);
 };
 
 

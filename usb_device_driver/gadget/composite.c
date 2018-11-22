@@ -356,7 +356,7 @@ int usb_function_activate(struct usb_function *function)
 
 	//spin_lock_irqsave(&cdev->lock, flags);
 
-	if (WARN_ON(cdev->deactivations == 0))
+	if (cdev->deactivations == 0)
 		status = -EINVAL;
 	else {
 		cdev->deactivations--;
