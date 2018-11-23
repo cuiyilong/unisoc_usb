@@ -27,7 +27,7 @@
 
 #define MAX_SINGLE_DIR_EPS 15
 
-const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
+static const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
 "wcn_bt1",
 "wcn_wifi"
