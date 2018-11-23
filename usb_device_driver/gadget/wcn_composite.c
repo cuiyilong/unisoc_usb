@@ -169,8 +169,10 @@ static int wcn_composite_bind(struct usb_composite_dev *cdev)
 
 	return 0;
 fail1:
+#ifdef USB_OTG
 	usb_mem_free(otg_desc[0]);
 	otg_desc[0] = NULL;
+#endif
 fail:
 	return status;
 }

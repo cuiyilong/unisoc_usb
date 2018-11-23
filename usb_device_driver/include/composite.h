@@ -504,6 +504,14 @@ extern int composite_setup(struct usb_gadget *gadget,
 extern void composite_suspend(struct usb_gadget *gadget);
 extern void composite_resume(struct usb_gadget *gadget);
 
+static inline u16 get_default_bcdDevice(void)
+{
+	u16 bcdDevice;
+
+	//bcdDevice = bin2bcd((LINUX_VERSION_CODE >> 16 & 0xff)) << 8;
+	//bcdDevice |= bin2bcd((LINUX_VERSION_CODE >> 8 & 0xff));
+	return bcdDevice;
+};
 
 struct usb_function_driver {
 	const char *name;
@@ -522,14 +530,6 @@ int usb_add_config_only(struct usb_composite_dev *cdev,
 void usb_remove_function(struct usb_configuration *c, struct usb_function *f);
 
 
-/* messaging utils */
-#define DBG(fmt, args...) \
-	dev_dbg(fmt , ## args)
-#define ERROR(fmt, args...) \
-	dev_err(fmt , ## args)
-#define WARNING(fmt, args...) \
-	dev_warn(fmt , ## args)
-#define INFO(fmt, args...) \
-	dev_info(fmt , ## args)
+
 
 #endif	/* __LINUX_USB_COMPOSITE_H */

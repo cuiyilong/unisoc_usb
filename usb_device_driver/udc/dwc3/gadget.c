@@ -1787,7 +1787,7 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 #define USB_INT_NUM 29
 	dwc->irq_gadget = USB_INT_NUM; //cyl int_req_usb  num  29
-	ret = ISR_RegHandler_EX(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt, CHIPDRV_HISR_PRIO_0, NULL);
+	ret = ISR_RegHandler_Ex(dwc->irq_gadget, dwc3_interrupt, dwc3_thread_interrupt, CHIPDRV_HISR_PRIO_0, NULL);
 
 	if (ret) {
 		dev_err("failed to request irq #%d --> %d\n",
@@ -1921,7 +1921,7 @@ static int dwc3_gadget_stop(struct usb_gadget *g)
 	 */
 	dwc3_wait_command_complete(dwc);
 
-	ISR_UnRegHander(dwc->irq_gadget);
+	ISR_UnRegHandler(dwc->irq_gadget);
 
 	return 0;
 }

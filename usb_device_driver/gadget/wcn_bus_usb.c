@@ -1,4 +1,5 @@
 #include "u_wcn_composite.h"
+#include "f_wcn_composite.h"
 
 #define CP_TX_ROLE 1
 #define CP_RX_ROLE 0
@@ -44,6 +45,7 @@ static int usb_dev_chninit(mchn_ops_t *ops)
 static int usb_dev_chndeinit(mchn_ops_t *ops)
 {
 	wcn_func_exit(wcn_chn_to_usb_intf(ops->channel, ops->inout));
+	return 0;
 }
 
 

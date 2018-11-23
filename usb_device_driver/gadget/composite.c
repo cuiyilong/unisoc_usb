@@ -714,8 +714,8 @@ static int set_config(struct usb_composite_dev *cdev,
 		result = 0;
 	}
 
-	INFO("%s config #%d: %s\n",
-	     usb_speed_string(gadget->speed),
+	INFO("%d config #%d: %s\n",
+	     gadget->speed,
 	     number, c ? c->label : "unconfigured");
 
 	if (!c)
@@ -1049,9 +1049,9 @@ static int get_string(struct usb_composite_dev *cdev,
 		struct usb_os_string *b = buf;
 		b->bLength = sizeof(*b);
 		b->bDescriptorType = USB_DT_STRING;
-		compiletime_assert(
-			sizeof(b->qwSignature) == sizeof(cdev->qw_sign),
-			"qwSignature size must be equal to qw_sign");
+		//compiletime_assert(
+			//sizeof(b->qwSignature) == sizeof(cdev->qw_sign),
+			//"qwSignature size must be equal to qw_sign");
 		memcpy(&b->qwSignature, cdev->qw_sign, sizeof(b->qwSignature));
 		b->bMS_VendorCode = cdev->b_vendor_code;
 		b->bPad = 0;
@@ -1141,7 +1141,7 @@ int usb_string_ids_tab(struct usb_composite_dev *cdev, struct usb_string *str)
 	int next = cdev->next_string_id;
 
 	for (; str->s; ++str) {
-		if (unlikely(next >= 254))
+		if (next >= 254)
 			return -ENODEV;
 		str->id = ++next;
 	}
@@ -1287,7 +1287,7 @@ err:
 int usb_string_ids_n(struct usb_composite_dev *c, unsigned n)
 {
 	unsigned next = c->next_string_id;
-	if (unlikely(n > 254 || (unsigned)next + n > 254))
+	if (n > 254 || (unsigned)next + n > 254)
 		return -ENODEV;
 	c->next_string_id += n;
 	return next + 1;
@@ -2106,20 +2106,20 @@ void composite_dev_cleanup(struct usb_composite_dev *cdev)
 
 	list_for_each_entry_safe(uc, tmp, &cdev->gstrings, list) {
 		list_del(&uc->list);
-		kfree(uc);
+		usb_mem_free(uc);
 	}
 	if (cdev->os_desc_req) {
 		if (cdev->os_desc_pending)
 			usb_ep_dequeue(cdev->gadget->ep0, cdev->os_desc_req);
 
-		kfree(cdev->os_desc_req->buf);
+		usb_mem_free(cdev->os_desc_req->buf);
 		usb_ep_free_request(cdev->gadget->ep0, cdev->os_desc_req);
 	}
 	if (cdev->req) {
 		if (cdev->setup_pending)
 			usb_ep_dequeue(cdev->gadget->ep0, cdev->req);
 
-		kfree(cdev->req->buf);
+		usb_mem_free(cdev->req->buf);
 		usb_ep_free_request(cdev->gadget->ep0, cdev->req);
 	}
 	cdev->next_string_id = 0;

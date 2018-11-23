@@ -518,11 +518,11 @@ static void wcn_disable(struct usb_function *f)
 		wcn_bt0 = func_to_wcn_bt0(f);
 		gwcn_bt0_disconnect(wcn_bt0);
 	} else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
-		wcn_bt0 = func_to_wcn_bt1(f);
-		gwcn_bt0_disconnect(wcn_bt1);
+		wcn_bt1 = func_to_wcn_bt1(f);
+		gwcn_bt1_disconnect(wcn_bt1);
 	} else {
 		wcn_wifi = func_to_wcn_wifi(f);
-		gwcn_bt0_disconnect(wcn_wifi);
+		gwcn_wifi_disconnect(wcn_wifi);
 	}
 }
 
@@ -775,7 +775,7 @@ static void wcn_free(struct usb_function *f)
 		wcn_bt0 = func_to_wcn_bt0(f);
 		usb_mem_free(wcn_bt0);
 	} else if(!strncmp(f->name,"wcn_bt1",strlen("wcn_bt1"))){
-		wcn_bt0 = func_to_wcn_bt1(f);
+		wcn_bt1 = func_to_wcn_bt1(f);
 		usb_mem_free(wcn_bt1);
 	} else {
 		wcn_wifi = func_to_wcn_wifi(f);
@@ -834,7 +834,7 @@ static struct usb_function *wcn_func_alloc(const char * name)
 	func->bind = wcn_bind;
 	func->unbind = wcn_unbind;
 	func->set_alt = wcn_set_alt;
-	func->set_alt = wcn_get_alt;
+	func->get_alt = wcn_get_alt;
 	func->setup = wcn_setup;
 	func->disable = wcn_disable;
 	func->free_func = wcn_free;

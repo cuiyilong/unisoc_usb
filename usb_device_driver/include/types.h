@@ -243,6 +243,15 @@ enum {
 #define dev_info(format, args...) SCI_TRACE_LOW(format, ## args)
 #define dev_warn(format, args...) SCI_TRACE_LOW(format, ## args)
 
+/* messaging utils */
+#define DBG(fmt, args...) \
+	dev_dbg(fmt , ## args)
+#define ERROR(fmt, args...) \
+	dev_err(fmt , ## args)
+#define WARNING(fmt, args...) \
+	dev_warn(fmt , ## args)
+#define INFO(fmt, args...) \
+	dev_info(fmt , ## args)
 
 #define WARN_ON(x) 
 #define WARN_ON_ONCE(x)

@@ -399,7 +399,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 		//return USB_CHN_ERR;
 
 	tx_reqs = wcn_usb_request_queue_get(ep_addr);
-	if (unlikely(!tx_reqs)) {
+	if (!tx_reqs) {
 		//return USB_CHN_ERR;
 	}
 
