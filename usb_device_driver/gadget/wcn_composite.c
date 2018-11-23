@@ -183,10 +183,10 @@ static int wcn_composite_unbind(struct usb_composite_dev *cdev)
 
 	for (i = 0; i < MAX_U_WCN_INTERFACES; i++)
 		usb_put_function(f_wcn[i]);
-
+#ifdef USB_OTG
 	usb_mem_free(otg_desc[0]);
 	otg_desc[0] = NULL;
-
+#endif
 	return 0;
 }
 

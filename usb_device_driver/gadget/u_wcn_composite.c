@@ -334,7 +334,7 @@ int usb_wcn_rx_submit(struct usb_ep *ep)
 	ep->driver_data = &wcn_usb_dev;
 
 	rx_reqs = wcn_usb_request_queue_get(ep->address);
-	if (list_empty(&rx_reqs)) {
+	if (list_empty(rx_reqs)) {
 		//return USB_RX_BUSY;
 	}
 
@@ -351,6 +351,8 @@ int usb_wcn_rx_submit(struct usb_ep *ep)
 	//req->context = &cpdu;
 
 	ret = usb_ep_queue(ep, req);
+
+	return ret;
 }
 
 static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
@@ -403,7 +405,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 		//return USB_CHN_ERR;
 	}
 
-	if (list_empty(&tx_reqs)) {
+	if (list_empty(tx_reqs)) {
 		//return USB_TX_BUSY;
 	}
 
@@ -411,7 +413,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 	list_del(&req->list);
 
 	/* temporarily stop TX queue when the freelist empties */
-	if (list_empty(&tx_reqs)) {
+	if (list_empty(tx_reqs)) {
 	//	usb_stop_queue();
 
 	}
@@ -438,7 +440,7 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 }
 
 
-static void gwcn_usb_trans_task(u32 argc, void *data)
+static void gwcn_usb_trans_task(uint32 argc, void *data)
 {
 	uint32 usb_gwcn_event_flag = 0;
 	int chn;

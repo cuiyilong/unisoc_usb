@@ -30,11 +30,14 @@ int usb_dev_init()
 	wcn_copmosite_init();
 
 	gwcn_task_init();
+
+	return 0;
 }
 
-int usb_dev_deinit()
+void usb_dev_deinit(void)
 {
 	wcn_copmosite_init();
+
 }
 	
 static int usb_dev_chninit(mchn_ops_t *ops)
@@ -65,6 +68,7 @@ int usb_chn_push_link(int chn, cpdu_t *head, cpdu_t *tail, int num)
 			break;
 	}
 
+	return ret;
 }
 
 

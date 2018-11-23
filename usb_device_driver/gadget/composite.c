@@ -216,7 +216,7 @@ ep_found:
 			break;
 		default:
 			if (comp_desc->bMaxBurst != 0)
-				ERROR(cdev, "ep0 bMaxBurst must be 0\n");
+				ERROR("ep0 bMaxBurst must be 0\n");
 			_ep->maxburst = 1;
 			break;
 		}
@@ -1744,7 +1744,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			if (f->func_suspend)
 				value = f->func_suspend(f, w_index >> 8);
 			if (value < 0) {
-				ERROR(cdev,
+				ERROR(
 				      "func_suspend() returned error %d\n",
 				      value);
 				value = 0;

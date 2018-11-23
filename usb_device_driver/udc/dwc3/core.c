@@ -29,6 +29,11 @@ struct dwc3		*dwc;
 
 #define DWC3_DEFAULT_AUTOSUSPEND_DELAY	500 /* ms */
 
+struct dwc3 *dwc3_get(void)
+{
+	return dwc;
+}
+
 int read_config_from_ini_string(char *item, const char **val)
 {
 	/* read usb init file */	
@@ -478,6 +483,7 @@ err1:
 err0:
 	return ret;
 #endif
+	return 0;
 }
 
 static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
@@ -1006,8 +1012,10 @@ static int dwc3_probe(void)
 	u8			hird_threshold;
 
 	int			ret;
+	#define CTL_USB_BASE 0x40D00000
+	uint32		base_addr = CTL_USB_BASE;
 
-#define CTL_USB_BASE 0x40D00000
+
 	//long			*regs = CTL_USB_BASE; /* 0x40D00000 */
 
 	dwc = usb_malloc(sizeof(*dwc));
@@ -1017,7 +1025,7 @@ static int dwc3_probe(void)
 	/*irq*/
 
 	/*base addr*/
-	dwc->regs	= CTL_USB_BASE;
+	dwc->regs	= (void __iomem *)base_addr;
 	//dwc->regs_size	= resource_size(res);
 
 	/* default to highest possible threshold */

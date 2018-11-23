@@ -502,7 +502,7 @@ static int wcn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
  */
 static int wcn_get_alt(struct usb_function *f, unsigned intf)
 {
-	
+	return 0;
 }
 
 static void wcn_disable(struct usb_function *f)
@@ -757,7 +757,7 @@ static int wcn_bind(struct usb_configuration *c, struct usb_function *f)
 	return 0;
 
 fail:
-	ERROR(cdev, "%s: can't bind, err %d\n", f->name, status);
+	ERROR("%s: can't bind, err %d\n", f->name, status);
 
 	return status;
 }
