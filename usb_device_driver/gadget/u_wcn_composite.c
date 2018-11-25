@@ -463,8 +463,8 @@ static void gwcn_usb_trans_task(uint32 argc, void *data)
 		while (!list_empty(rx_buf_head)) {
 			rx_buf = list_entry(rx_buf_head, struct rx_buf_node, list);
 			bus_hw_pop_link(chn, rx_buf->buf_head, rx_buf->buf_head, rx_buf->buf_num);
-
-			
+			list_del(&rx_buf->list);
+			usb_mem_free(rx_buf);
 		}
 		ep = wcn_ep_get(IN_CHN_TO_EP_ADDR(chn));
 		usb_wcn_rx_submit(ep);
