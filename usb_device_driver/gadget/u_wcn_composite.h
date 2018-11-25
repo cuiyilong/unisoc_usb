@@ -27,6 +27,14 @@
 
 #define MAX_SINGLE_DIR_EPS 15
 
+
+enum {
+	USB_CHN_ERR = -1,
+	USB_TX_BUSY = -2,
+	USB_RX_BUSY = -3,
+};
+
+
 static const char f_inf_name[MAX_U_WCN_INTERFACES][MAX_FUNC_NAME_LEN] = {
 "wcn_bt0",
 "wcn_bt1",
@@ -74,7 +82,17 @@ struct f_wcn_dev{
 	struct list_head	*in_req[MAX_SINGLE_DIR_EPS];
 	struct list_head	*out_req[MAX_SINGLE_DIR_EPS];
 	/* func rx buf list */
-	struct list_head	rx_bufs[MAX_U_WCN_INTERFACES];
+	struct list_head	rx_buf_head[MAX_U_WCN_INTERFACES];
+};
+
+
+
+struct rx_buf_node {
+	struct list_head	list;
+	cpdu_t	*buf_head;
+	cpdu_t	*buf_tail;
+	unsigned	buf_num;
+	unsigned chn;
 };
 
 extern struct f_wcn_dev *wcn_usb_dev;

@@ -45,6 +45,17 @@ struct usb_udc g_udc;
 
 
 /* ------------------------------------------------------------------------- */
+int usb_gadget_map_request(struct usb_gadget *gadget,
+		struct usb_request *req, int is_in)
+{
+	return 0;
+}
+void usb_gadget_unmap_request(struct usb_gadget *gadget,
+		struct usb_request *req, int is_in)
+{
+	return;
+}
+
 
 #ifdef	CONFIG_HAS_DMA
 

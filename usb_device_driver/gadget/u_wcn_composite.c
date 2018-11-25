@@ -266,11 +266,11 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	struct list_head *rx_reqs;
 	int		status = req->status;
 
-	struct list_head	*rx_bufs;
-	//struct cpdu_list *cpdu;
+	struct list_head	*rx_buf_head;
+	struct rx_buf_node	*rx_buf;
 
 	struct f_wcn_dev *p_wcn_usb_dev = ep->driver_data;
-
+	int chn = IN_EP_ADDR_TO_CHN(ep->address);
 
 
 
@@ -282,11 +282,13 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	/* normal completion */
 	case 0:
 
-		//rx_bufs = p_wcn_usb_dev->rx_bufs[]
-		
+		rx_buf_head = p_wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn)];
+		rx_buf= usb_malloc(sizeof(rx_buf));
+		if (!rx_buf)
+			goto clean;
+		rx_buf->chn = chn;
 		/* add buf to rx list */
-//		list_add_tail(&cpdu->list, rx_bufs);
-		
+		list_add_tail(&rx_buf->list, rx_buf_head);
 		
 
 		break;
@@ -323,34 +325,38 @@ clean:
 }
 int usb_wcn_rx_submit(struct usb_ep *ep)
 {
-	
 	struct usb_request *req;
 	struct list_head *rx_reqs;
 
-
-
+	
 	int ret;
 
+	mchn_info_t *mchn = mchn_info();
+	int chn = IN_EP_ADDR_TO_CHN(ep->address);
+	
 	ep->driver_data = &wcn_usb_dev;
 
 	rx_reqs = wcn_usb_request_queue_get(ep->address);
 	if (list_empty(rx_reqs)) {
-		//return USB_RX_BUSY;
+		return USB_RX_BUSY;
 	}
 
-	req = container_of(rx_reqs->next, struct usb_request, list);
-	list_del(&req->list);
+	while (!list_empty(rx_reqs)) {
 
+		req = container_of(rx_reqs->next, struct usb_request, list);
+		list_del_init(&req->list);
+		/* get free buffer */
+		ret = mchn->ops[chn]->push_link(&req->buf_head, &req->buf_tail, &req->buf_num);
+		if (ret != 0 ) {
+			/* no tx buf*/
+		}
 
+		req->complete = usb_wcn_rx_complete;
+		//req->context = &cpdu;
 
-	/* get free buffer */
+		ret = usb_ep_queue(ep, req);
 
-	//req->buf = cpdu->buf_head->buf;
-	//req->length = cpdu->buf_head->len;
-	//req->complete = usb_wcn_rx_complete;
-	//req->context = &cpdu;
-
-	ret = usb_ep_queue(ep, req);
+	}
 
 	return ret;
 }
@@ -380,6 +386,7 @@ static void usb_wcn_xmit_complete(struct usb_ep *ep, struct usb_request *req)
 	
 	bus_hw_pop_link(chn, req->buf_head, req->buf_head, req->buf_num);
 	req->buf_head = req->buf_head = NULL;
+	req->buf_num = 0;
 
 	list_add_tail(&req->list, tx_reqs);
 	
@@ -398,15 +405,15 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 	ep_addr = IN_CHN_TO_EP_ADDR(chn);
 	ep = wcn_ep_get(ep_addr);
 	if(!ep)
-		//return USB_CHN_ERR;
+		return USB_CHN_ERR;
 
 	tx_reqs = wcn_usb_request_queue_get(ep_addr);
 	if (!tx_reqs) {
-		//return USB_CHN_ERR;
+		return USB_CHN_ERR;
 	}
 
 	if (list_empty(tx_reqs)) {
-		//return USB_TX_BUSY;
+		return USB_TX_BUSY;
 	}
 
 	req = container_of(tx_reqs->next, struct usb_request, list);
@@ -418,19 +425,14 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 
 	}
 
-	req->buf_num = num;
+
 	req->context = tx_reqs;
-	//req->cpdu.buf_head = head;
-	//req->cpdu.buf_tail = tail;
+	req->cpdu.buf_head = head;
+	req->cpdu.buf_tail = tail;
+	req->buf_num = num;
+
+	/* buf length :init later*/
 	/* buf link or only buf */
-	if (num > 1) {
-
-		//req->length = /* cyl?? */
-
-	} else {
-		//req->buf = head->buf;
-		req->length = head->len;
-	}
 	
 	
 	req->complete = usb_wcn_xmit_complete;
@@ -443,29 +445,30 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 static void gwcn_usb_trans_task(uint32 argc, void *data)
 {
 	uint32 usb_gwcn_event_flag = 0;
-	int chn;
-
-	struct list_head	*rx_bufs;
-	//struct cpdu_list *cpdu;
-
 	
+	struct usb_ep *ep;
+	struct list_head	*rx_buf_head;
+	struct rx_buf_node	*rx_buf;
+
+	int chn;
 	
 	while(1) {
 		SCI_GetEvent(usb_gwcn_event, 0xffff, SCI_OR_CLEAR, &usb_gwcn_event_flag, SCI_WAIT_FOREVER);
 		if (usb_gwcn_event_flag != 0x1)
 			continue;
+		chn  = usb_gwcn_event_flag;
 
-		//rx_bufs = 
+		rx_buf_head = wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn)];
 		/* hand rx list */
-		while (!list_empty(rx_bufs)) {
-//			cpdu = list_first_entry(rx_bufs, struct cpdu_list, list);
-			//chn = OUT_EP_ADDR_TO_CHN(ep->address);
-	//		bus_hw_pop_link(chn, cpdu->buf_head, cpdu->buf_head, cpdu->buf_num);
-			chn = 1;
+		while (!list_empty(rx_buf_head)) {
+			rx_buf = list_entry(rx_buf_head, struct rx_buf_node, list);
+			bus_hw_pop_link(chn, rx_buf->buf_head, rx_buf->buf_head, rx_buf->buf_num);
+
+			
 		}
-
-
-		//usb_wcn_rx_submit();
+		ep = wcn_ep_get(IN_CHN_TO_EP_ADDR(chn));
+		usb_wcn_rx_submit(ep);
+		
 	}
 }
 

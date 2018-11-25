@@ -261,7 +261,8 @@ void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
 		i = 0;
 		do {
 			dwc3_ep_inc_deq(dep);
-		} while(++i < req->request.num_mapped_sgs);
+		} while(++i < req->request.buf_num);
+		//} while(++i < req->request.num_mapped_sgs);
 		req->queued = false;
 	}
 	list_del(&req->list);
@@ -272,9 +273,10 @@ void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
 
 	if (dwc->ep0_bounced && dep->number == 0)
 		dwc->ep0_bounced = false;
-	else
-		usb_gadget_unmap_request(&dwc->gadget, &req->request,
-				req->direction);
+	else {
+		//usb_gadget_unmap_request(&dwc->gadget, &req->request,
+			//	req->direction);
+	}
 
 	dev_dbg("request %p from %s completed %d/%d ===> %d\n",
 			req, dep->name, req->request.actual,
@@ -941,21 +943,27 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
 		dma_addr_t	dma;
 		last_one = false;
 
-		if (req->request.num_mapped_sgs)
-			num_trbs_required += req->request.num_mapped_sgs;
+		//if (req->request.num_mapped_sgs)
+			//num_trbs_required += req->request.num_mapped_sgs;
+		if (req->request.buf_num)
+			num_trbs_required += req->request.buf_num;
 		else
 			num_trbs_required++;
 
 		if (trbs_left < num_trbs_required)
 			break;
 
-		if (req->request.num_mapped_sgs > 0) {
+		//if (req->request.num_mapped_sgs > 0) {
+		if (req->request.buf_num > 0) {
 			struct usb_request *request = &req->request;
 			#ifdef __linux__
 			struct scatterlist *sg = request->sg;
 			struct scatterlist *s;
 			#else
-			
+			cpdu_t	*buf_head = req->request->buf_head;
+			cpdu_t	*buf_tail = req->request->buf_tail;
+			cpdu_t	*buf_current = buf_head; 
+
 			#endif
 			int		i;
 			#ifdef __linux__
@@ -986,6 +994,37 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
 					break;
 			}
 			#else
+			for ( i = 0; i < req->request.buf_num; i++ ) {
+			//for_each_sg(sg, s, request->num_mapped_sgs, i) {
+				unsigned chain = true;
+				
+				
+
+				//length = sg_dma_len(s);
+				//dma = sg_dma_address(s);
+				length = buf_current->len;
+				dma = buf_current + buf_current->offset;
+
+				if (i == (request->buf_num - 1)) {
+					if (list_empty(&dep->request_list))
+						last_one = true;
+					chain = false;
+				}
+
+				trbs_left--;
+				if (!trbs_left)
+					last_one = true;
+
+				if (last_one)
+					chain = false;
+
+				dwc3_prepare_one_trb(dep, req, dma, length,
+						last_one, chain, i);
+
+				if (last_one)
+					break;
+				buf_current = buf_current->next;
+			}
 			#endif
 
 			if (last_one)
@@ -1074,8 +1113,11 @@ static int __dwc3_gadget_kick_transfer(struct dwc3_ep *dep, u16 cmd_param,
 		 * here and stop, unmap, free and del each of the linked
 		 * requests instead of what we do now.
 		 */
+		#if 0 //cyl
 		usb_gadget_unmap_request(&dwc->gadget, &req->request,
 				req->direction);
+		#endif
+		 
 		list_del(&req->list);
 		return ret;
 	}
@@ -1145,10 +1187,12 @@ static int __dwc3_gadget_ep_queue(struct dwc3_ep *dep, struct dwc3_request *req)
 	 * This will also avoid Host cancelling URBs due to too
 	 * many NAKs.
 	 */
+	#if 0 // cyl phy address directly no need map
 	ret = usb_gadget_map_request(&dwc->gadget, &req->request,
 			dep->direction);
 	if (ret)
 		return ret;
+	#endif
 
 	list_add_tail(&req->list, &dep->request_list);
 
@@ -2187,7 +2231,8 @@ static int dwc3_cleanup_done_reqs(struct dwc3 *dwc, struct dwc3_ep *dep,
 					event, status);
 			if (ret)
 				break;
-		} while (++i < req->request.num_mapped_sgs);
+		} while (++i < req->request.buf_num);
+		//} while (++i < req->request.num_mapped_sgs);
 
 		dwc3_gadget_giveback(dep, req, status);
 

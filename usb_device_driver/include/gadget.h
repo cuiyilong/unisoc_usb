@@ -93,15 +93,14 @@ struct usb_request {
 
 #if _linux_
 	struct scatterlist	*sg;
+	unsigned		num_sgs;
+	unsigned		num_mapped_sgs;
 #else
 	cpdu_t	*buf_head;
 	cpdu_t	*buf_tail;
 	unsigned	buf_num;
 #endif
-	unsigned		num_sgs;
-	unsigned		num_mapped_sgs;
-
-
+	
 	unsigned		stream_id:16;
 	unsigned		no_interrupt:1;
 	unsigned		zero:1;
