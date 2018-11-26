@@ -6,25 +6,6 @@
 
 static mchn_bus_ops usb_bus_ops;
 
-/* mchn port to usb endpoint address: 0-15 out/16-31 in*/
-
-inline u8 wcn_chn_to_usb_intf(u8 chn,int inout)
-{	u8 idx = 0;
-
-	if(chn > 16)
-		chn = chn - 16;
-
-	if(chn <= 2)
-		idx = 0;
-	else if (chn == 3)
-		idx = 1;
-	else
-		idx = 2;
-
-	return idx;
-}
-
-
 int usb_dev_init()
 {
 	wcn_copmosite_init();
@@ -72,7 +53,7 @@ int usb_chn_push_link(int chn, cpdu_t *head, cpdu_t *tail, int num)
 }
 
 
-void module_bus_init(void)
+void module_bus_init_usb(void)
 {
 	usb_bus_ops.type = HW_TYPE_USB;
 	usb_bus_ops.init = usb_dev_init;

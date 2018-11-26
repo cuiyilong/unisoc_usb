@@ -960,8 +960,8 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
 			struct scatterlist *sg = request->sg;
 			struct scatterlist *s;
 			#else
-			cpdu_t	*buf_head = req->request->buf_head;
-			cpdu_t	*buf_tail = req->request->buf_tail;
+			cpdu_t	*buf_head = req->request.buf_head;
+			cpdu_t	*buf_tail = req->request.buf_tail;
 			cpdu_t	*buf_current = buf_head; 
 
 			#endif
@@ -1003,7 +1003,7 @@ static void dwc3_prepare_trbs(struct dwc3_ep *dep)
 				//length = sg_dma_len(s);
 				//dma = sg_dma_address(s);
 				length = buf_current->len;
-				dma = buf_current + buf_current->offset;
+				dma = (dma_addr_t)(*(unsigned int *)&buf_current + buf_current->offset);
 
 				if (i == (request->buf_num - 1)) {
 					if (list_empty(&dep->request_list))

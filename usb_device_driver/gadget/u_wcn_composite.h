@@ -95,6 +95,26 @@ struct rx_buf_node {
 	unsigned chn;
 };
 
+
+/* mchn port to usb endpoint address: 0-15 out/16-31 in*/
+
+static inline u8 wcn_chn_to_usb_intf(u8 chn,int inout)
+{	u8 idx = 0;
+
+	if(chn > 16)
+		chn = chn - 16;
+
+	if(chn <= 2)
+		idx = 0;
+	else if (chn == 3)
+		idx = 1;
+	else
+		idx = 2;
+
+	return idx;
+};
+
+
 extern struct f_wcn_dev *wcn_usb_dev;
 
 int gwcn_bt0_connect(struct f_wcn_bt0 *wcn_bt0);

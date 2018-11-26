@@ -282,7 +282,7 @@ static void usb_wcn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	/* normal completion */
 	case 0:
 
-		rx_buf_head = p_wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn)];
+		rx_buf_head = &p_wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn, 1)];
 		rx_buf= usb_malloc(sizeof(rx_buf));
 		if (!rx_buf)
 			goto clean;
@@ -346,7 +346,7 @@ int usb_wcn_rx_submit(struct usb_ep *ep)
 		req = container_of(rx_reqs->next, struct usb_request, list);
 		list_del_init(&req->list);
 		/* get free buffer */
-		ret = mchn->ops[chn]->push_link(&req->buf_head, &req->buf_tail, &req->buf_num);
+		ret = mchn->ops[chn]->push_link(chn, &req->buf_head, &req->buf_tail, &req->buf_num);
 		if (ret != 0 ) {
 			/* no tx buf*/
 		}
@@ -427,8 +427,8 @@ int usb_wcn_start_xmit(int chn, cpdu_t *head, cpdu_t *tail, int num)
 
 
 	req->context = tx_reqs;
-	req->cpdu.buf_head = head;
-	req->cpdu.buf_tail = tail;
+	req->buf_head = head;
+	req->buf_tail = tail;
 	req->buf_num = num;
 
 	/* buf length :init later*/
@@ -458,7 +458,7 @@ static void gwcn_usb_trans_task(uint32 argc, void *data)
 			continue;
 		chn  = usb_gwcn_event_flag;
 
-		rx_buf_head = wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn)];
+		rx_buf_head = &wcn_usb_dev->rx_buf_head[wcn_chn_to_usb_intf(chn, 1)];
 		/* hand rx list */
 		while (!list_empty(rx_buf_head)) {
 			rx_buf = list_entry(rx_buf_head, struct rx_buf_node, list);

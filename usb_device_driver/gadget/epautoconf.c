@@ -92,7 +92,8 @@ found_ep:
 	/* report address */
 	desc->bEndpointAddress &= USB_DIR_IN;
 	if (isdigit(ep->name[2])) {
-		u8 num = simple_strtoul(&ep->name[2], NULL, 10);
+		//u8 num = simple_strtoul(&ep->name[2], NULL, 10);//cyl
+		u8 num = 0;
 		desc->bEndpointAddress |= num;
 	} else if (desc->bEndpointAddress & USB_DIR_IN) {
 		if (++gadget->in_epnum > 15)

@@ -1005,7 +1005,7 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 }
 
 /* udc init */
-static int dwc3_probe(void)
+int dwc3_probe(void)
 {
 	u8			lpm_nyet_threshold;
 	u8			tx_de_emphasis;

@@ -32,6 +32,12 @@ struct usb_os_string {
 	__u8	bPad;
 } __packed;
 
+static inline void put_unaligned_le16(uint16 val, void *p)
+{
+	return;
+};
+
+
 /**
  * usb_gadget_get_string - fill out a string descriptor 
  * @table: of c strings encoded using UTF-8

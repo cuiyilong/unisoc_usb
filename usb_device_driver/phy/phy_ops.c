@@ -14,7 +14,11 @@ usb_phy_set_suspend()
 usb_phy_set_wakeup()
 {
 }
-	
+
+phy_power_on()
+{
+}
+
 phy_power_off()
 {
 }

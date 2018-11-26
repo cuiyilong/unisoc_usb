@@ -587,7 +587,8 @@ struct dwc3_trb {
 	u32		bph;
 	u32		size;
 	u32		ctrl;
-} __packed;
+};
+//} __packed;
 
 /**
  * dwc3_hwparams - copy of HWPARAMS registers
